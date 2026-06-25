@@ -1,15 +1,15 @@
-import { useState } from 'react'
+import { useAuthSession } from '../hooks/useAuthSession'
+import Dashboard from './Dashboard'
+import Login from './Login'
 
 function App() {
-  const [count, setCount] = useState(0)
+  const { admin, isLoggedIn, logout, persistSession } = useAuthSession()
 
-  return (
-    <>
-      <h1 onClick={()=>{
-        setCount(count+1)
-      }} className="text-3xl font-bold text-cyan-400">EcoPointsRD Admin {count}</h1>
-    </> 
-  )
+  if (!isLoggedIn) {
+    return <Login onLogin={persistSession} />
+  }
+
+  return <Dashboard admin={admin!} onLogout={logout} />
 }
 
 export default App
