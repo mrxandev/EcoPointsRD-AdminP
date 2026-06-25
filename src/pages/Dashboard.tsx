@@ -33,7 +33,7 @@ function Dashboard({ admin, onLogout }: DashboardProps) {
   const dashboard = useAdminDashboard(handleError)
   const users = useAdminUsers({
     onAfterMutation: async () => {
-      await Promise.all([dashboard.loadDashboard(), users.loadUsers(), audits.loadAudits()])
+      await dashboard.loadDashboard()
     },
     onError: handleError,
     onToast: pushToast,
