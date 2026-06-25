@@ -102,6 +102,7 @@ export function useAdminUsers({
       setCreateForm(emptyUserForm)
       setCreateErrors({})
       onToast('Usuario creado correctamente.', 'success')
+      await loadUsers()
       await onAfterMutation()
     } catch (error) {
       onError(error)
@@ -119,6 +120,7 @@ export function useAdminUsers({
       await updateAdminUser(selectedUser.id, editForm)
       onToast('Perfil actualizado correctamente.', 'success')
       await selectUser(selectedUser.id)
+      await loadUsers()
       await onAfterMutation()
     } catch (error) {
       onError(error)
@@ -129,8 +131,8 @@ export function useAdminUsers({
 
   const updateRole = async () => {
     if (!selectedUser || !roleChange.reason.trim()) {
-      setRoleReasonError('Indica una razon para cambiar el rol.')
-      onToast('Debes colocar una razon para actualizar el rol.', 'error')
+      setRoleReasonError('Indica una razón para cambiar el rol.')
+      onToast('Debes colocar una razón para actualizar el rol.', 'error')
       return
     }
 
@@ -140,6 +142,7 @@ export function useAdminUsers({
       await updateAdminUserRole(selectedUser.id, roleChange.role, roleChange.reason)
       onToast('Rol actualizado correctamente.', 'success')
       await selectUser(selectedUser.id)
+      await loadUsers()
       await onAfterMutation()
     } catch (error) {
       onError(error)
@@ -150,8 +153,8 @@ export function useAdminUsers({
 
   const updateStatus = async () => {
     if (!selectedUser || !statusChange.reason.trim()) {
-      setStatusReasonError('Indica una razon para cambiar el estado.')
-      onToast('Debes colocar una razon para actualizar el estado.', 'error')
+      setStatusReasonError('Indica una razón para cambiar el estado.')
+      onToast('Debes colocar una razón para actualizar el estado.', 'error')
       return
     }
 
@@ -161,6 +164,7 @@ export function useAdminUsers({
       await updateAdminUserStatus(selectedUser.id, statusChange.status, statusChange.reason)
       onToast('Estado actualizado correctamente.', 'success')
       await selectUser(selectedUser.id)
+      await loadUsers()
       await onAfterMutation()
     } catch (error) {
       onError(error)
@@ -183,8 +187,8 @@ export function useAdminUsers({
     const errors: Partial<Record<keyof UserFormState, string>> = {}
     const cedulaDigits = onlyDigits(createForm.cedula)
 
-    if (!cedulaDigits) errors.cedula = 'La cedula es requerida.'
-    else if (cedulaDigits.length !== 11) errors.cedula = 'Debe tener 11 digitos.'
+    if (!cedulaDigits) errors.cedula = 'La cédula es requerida.'
+    else if (cedulaDigits.length !== 11) errors.cedula = 'Debe tener 11 dígitos.'
     if (!createForm.first_name) errors.first_name = 'El nombre es requerido.'
     if (!createForm.last_name) errors.last_name = 'El apellido es requerido.'
     if (!createForm.email) errors.email = 'El email es requerido.'
