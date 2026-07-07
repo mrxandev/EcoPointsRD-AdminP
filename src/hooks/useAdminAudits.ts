@@ -1,4 +1,4 @@
-import { useEffect, useState } from 'react'
+import { useCallback, useEffect, useState } from 'react'
 import type { AuditFilters } from '../pages/admin/types'
 import { getAdminAuditLogs } from '../services/adminAuditService'
 import type { AdminUser, AuditLog } from '../types'
@@ -8,15 +8,7 @@ export function useAdminAudits(users: AdminUser[], onError: (error: unknown) => 
   const [auditFilters, setAuditFilters] = useState<AuditFilters>({ action: '', actorCedula: '', entityType: '', targetCedula: '' })
   const [loadingAudits, setLoadingAudits] = useState(false)
 
-  useEffect(() => {
-    const timer = window.setTimeout(() => {
-      void loadAudits()
-    }, 350)
-
-    return () => window.clearTimeout(timer)
-  }, [auditFilters, users])
-
-  const loadAudits = async () => {
+  const loadAudits = useCallback(async () => {
     setLoadingAudits(true)
     try {
       setAudits(await getAdminAuditLogs(auditFilters, users))
@@ -25,7 +17,15 @@ export function useAdminAudits(users: AdminUser[], onError: (error: unknown) => 
     } finally {
       setLoadingAudits(false)
     }
-  }
+  }, [auditFilters, onError, users])
+
+  useEffect(() => {
+    const timer = window.setTimeout(() => {
+      void loadAudits()
+    }, 350)
+
+    return () => window.clearTimeout(timer)
+  }, [loadAudits])
 
   return {
     auditFilters,

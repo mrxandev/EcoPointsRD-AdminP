@@ -59,7 +59,7 @@ function DashboardLayout({
         </button>
       </aside>
 
-      <section className={sidebarExpanded ? 'md:pl-72' : 'md:pl-20'}>
+      <section className={`min-w-0 ${sidebarExpanded ? 'md:pl-72' : 'md:pl-20'}`}>
         <header className="sticky top-0 z-10 border-b border-outline-variant bg-background/90 px-5 py-4 backdrop-blur lg:px-8">
           <div className="flex items-center justify-between gap-3">
             <div className="flex min-w-0 items-center gap-3">
@@ -68,7 +68,7 @@ function DashboardLayout({
               </button>
               <div className="min-w-0">
                 <p className="truncate text-sm text-on-surface-variant">Conectado a {apiDisplayUrl}</p>
-                <h2 className="text-2xl font-bold text-on-surface">Hola, {adminName}</h2>
+                <h2 className="truncate text-xl font-bold text-on-surface sm:text-2xl">Hola, {adminName}</h2>
               </div>
             </div>
             <div className="hidden shrink-0 gap-2 sm:flex md:hidden">

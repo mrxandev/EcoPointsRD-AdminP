@@ -32,7 +32,7 @@ const entityOptions = ['', 'users']
 
 function AuditPage({ audits, filters, loading, users, onFiltersChange, onLoadAudits }: AuditPageProps) {
   return (
-    <div className="grid gap-6 xl:grid-cols-[260px_1fr]">
+    <div className="grid min-w-0 gap-6 xl:grid-cols-[260px_minmax(0,1fr)]">
       <Panel title="Auditorias">
         <div className="space-y-2">
           {auditSections.map((section) => (
@@ -48,7 +48,7 @@ function AuditPage({ audits, filters, loading, users, onFiltersChange, onLoadAud
         </div>
       </Panel>
 
-      <Panel title="Logs generales" action={<button className="button-secondary" onClick={onLoadAudits}><FiRefreshCw /> Actualizar</button>}>
+      <Panel title="Logs generales" action={<button className="button-secondary w-full sm:w-auto" onClick={onLoadAudits}><FiRefreshCw /> Actualizar</button>}>
         <div className="mb-4 grid items-end gap-3 md:grid-cols-4">
           <Select label="Accion" value={filters.action} onChange={(value) => onFiltersChange({ ...filters, action: value })} options={actionOptions} />
           <Select label="Entidad" value={filters.entityType} onChange={(value) => onFiltersChange({ ...filters, entityType: value })} options={entityOptions} />

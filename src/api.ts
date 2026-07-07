@@ -2,13 +2,14 @@ import axios from 'axios'
 
 const API_URLS = {
   local: 'http://localhost:3000',
+  dev: 'http://localhost:3000',
   prod: 'https://backend-ecopointsrd.onrender.com',
 } as const
 
 type ApiEnvironment = keyof typeof API_URLS
 
 const env = (import.meta.env.VITE_ENV ?? 'local').toLowerCase()
-const apiEnvironment: ApiEnvironment = env === 'prod' ? 'prod' : 'local'
+const apiEnvironment: ApiEnvironment = env === 'prod' ? 'prod' : env === 'dev' ? 'dev' : 'local'
 
 export const apiBaseUrl = API_URLS[apiEnvironment]
 export const apiDisplayUrl = apiBaseUrl
