@@ -14,8 +14,8 @@ function AuditList({ audits, expanded = false, users = [] }: AuditListProps) {
   }
 
   return (
-    <div className="overflow-x-auto">
-      <table className="w-full min-w-[980px] text-left text-sm">
+    <div className="-mx-4 overflow-x-auto px-4 sm:mx-0 sm:px-0">
+      <table className="w-full min-w-[760px] text-left text-sm lg:min-w-[980px]">
         <thead className="text-xs uppercase text-on-surface-variant">
           <tr>
             <th className="p-3">Accion</th>

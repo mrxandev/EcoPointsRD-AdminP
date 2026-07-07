@@ -11,7 +11,7 @@ function Badge({ label, tone = 'default' }: { label: string; tone?: BadgeTone })
     info: 'bg-tertiary/10 text-tertiary',
   }
 
-  return <span className={`rounded-full px-3 py-1 text-xs font-semibold ${tones[tone]}`}>{label}</span>
+  return <span className={`inline-flex max-w-full items-center rounded-full px-3 py-1 text-xs font-semibold ${tones[tone]}`}>{label}</span>
 }
 
 export function StatusBadge({ status }: { status: UserStatus }) {

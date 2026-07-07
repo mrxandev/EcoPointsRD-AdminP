@@ -30,15 +30,17 @@ export async function createAdminUser(form: UserFormState) {
 }
 
 export async function updateAdminUser(id: string, form: Partial<AdminUser>) {
-  return api.patch(`/api/admin/users/${id}`, normalizeUserPayload(form))
+  return api.put(`/api/admin/users/${id}`, normalizeUserPayload(form))
 }
 
 export async function updateAdminUserRole(id: string, role: string, reason: string) {
-  return api.patch(`/api/admin/users/${id}/role`, { role, reason })
+  return api.put(`/api/admin/users/${id}`, { role, reason })
 }
 
 export async function updateAdminUserStatus(id: string, status: string, reason: string) {
-  return api.patch(`/api/admin/users/${id}/status`, { status, reason })
+  if (status === 'ACTIVE') return api.patch(`/api/admin/users/${id}/activate`, { reason })
+  if (status === 'SUSPENDED') return api.patch(`/api/admin/users/${id}/suspend`, { reason })
+  return api.patch(`/api/admin/users/${id}/ban`, { reason })
 }
 
 function normalizeUserPayload<T extends Partial<UserFormState> | Partial<AdminUser>>(payload: T) {

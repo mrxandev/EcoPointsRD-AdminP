@@ -1,4 +1,4 @@
-import { useEffect, useState } from 'react'
+import { useCallback, useEffect, useState } from 'react'
 import type { FormEvent } from 'react'
 import { emptyUserForm } from '../constants'
 import { onlyDigits } from '../formatters'
@@ -37,15 +37,7 @@ export function useAdminUsers({
   const [roleChange, setRoleChange] = useState({ role: 'USER' as UserRole, reason: '' })
   const [statusChange, setStatusChange] = useState({ status: 'ACTIVE' as UserStatus, reason: '' })
 
-  useEffect(() => {
-    const timer = window.setTimeout(() => {
-      void loadUsers()
-    }, 350)
-
-    return () => window.clearTimeout(timer)
-  }, [filters])
-
-  const loadUsers = async () => {
+  const loadUsers = useCallback(async () => {
     setLoadingUsers(true)
     try {
       setUsers(await getAdminUsers(filters))
@@ -54,7 +46,15 @@ export function useAdminUsers({
     } finally {
       setLoadingUsers(false)
     }
-  }
+  }, [filters, onError])
+
+  useEffect(() => {
+    const timer = window.setTimeout(() => {
+      void loadUsers()
+    }, 350)
+
+    return () => window.clearTimeout(timer)
+  }, [loadUsers])
 
   const selectUser = async (id: string) => {
     setRoleReasonError('')

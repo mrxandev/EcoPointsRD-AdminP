@@ -4,13 +4,41 @@ export const roles: UserRole[] = ['USER', 'AGENT', 'ADMIN']
 export const statuses: UserStatus[] = ['ACTIVE', 'SUSPENDED', 'BANNED']
 
 export const emptyStats: DashboardStats = {
-  totalUsers: 0,
-  activeUsers: 0,
-  suspendedUsers: 0,
-  bannedUsers: 0,
-  totalAgents: 0,
-  totalAdmins: 0,
-  verifiedUsers: 0,
+  summary: {
+    total_users: 0,
+    active_users: 0,
+    total_missions: 0,
+    published_missions: 0,
+    completed_missions: 0,
+    total_points_generated: 0,
+    total_rewards_redeemed: 0,
+    pending_evidences: 0,
+  },
+  users: {
+    byRole: [],
+    byStatus: [],
+    registeredByMonth: [],
+  },
+  missions: {
+    byType: [],
+    byStatus: [],
+    mostPopular: [],
+    mostPointsAwarded: [],
+  },
+  points: {
+    totals: {
+      delivered: 0,
+      redeemed: 0,
+    },
+    topUsers: [],
+    recentTransactions: [],
+  },
+  rewards: {
+    mostRedeemed: [],
+    outOfStock: [],
+    pendingRedemptions: 0,
+    deliveredRedemptions: 0,
+  },
 }
 
 export const emptyUserForm: UserFormState = {

@@ -19,18 +19,17 @@ export async function getAdminAuditLogs(filters: AuditFilters, users: AdminUser[
   const params = Object.fromEntries(
     Object.entries({
       action: filters.action,
-      entityType: filters.entityType,
-      actorId,
-      targetUserId,
+      entity_type: filters.entityType,
+      user_id: actorId || targetUserId,
     }).filter(([, value]) => value),
   )
 
-  const { data } = await api.get<ListResponse<AuditLog>>('/api/admin/audit-logs', { params })
+  const { data } = await api.get<ListResponse<AuditLog>>('/api/admin/logs', { params })
   return readList(data, ['auditLogs', 'logs', 'data', 'results'])
 }
 
 export async function getAuditLogsByTargetUser(targetUserId: string) {
-  const { data } = await api.get<ListResponse<AuditLog>>('/api/admin/audit-logs', { params: { targetUserId } })
+  const { data } = await api.get<ListResponse<AuditLog>>('/api/admin/logs', { params: { user_id: targetUserId } })
   return readList(data, ['auditLogs', 'logs', 'data', 'results'])
 }
 
