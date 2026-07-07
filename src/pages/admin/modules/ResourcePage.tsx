@@ -33,6 +33,7 @@ type ResourcePageProps = {
 
 function ResourcePage({ config, onToast }: ResourcePageProps) {
   const [fields, setFields] = useState<ModuleField[]>(config.fields ?? [])
+  const [filterFields, setFilterFields] = useState<ModuleField[]>(config.filters ?? [])
   const [records, setRecords] = useState<AdminRecord[]>([])
   const [filters, setFilters] = useState<Record<string, string>>({})
   const emptyForm = useMemo(() => buildInitialForm(fields), [fields])
@@ -45,6 +46,12 @@ function ResourcePage({ config, onToast }: ResourcePageProps) {
   const hasList = config.columns.length > 0
   const isMissionModule = config.endpoint === '/api/admin/missions'
   const formTitle = selected && config.canUpdate ? `Editar ${config.title}` : config.createTitle ?? `Crear ${config.title}`
+
+  useEffect(() => {
+    setFields(config.fields ?? [])
+    setFilterFields(config.filters ?? [])
+    setFilters({})
+  }, [config])
 
   const loadRecords = useCallback(async () => {
     if (!hasList) return
@@ -74,19 +81,23 @@ function ResourcePage({ config, onToast }: ResourcePageProps) {
       void (async () => {
         try {
           const organizations = await listAdminResource('/api/admin/organizations', ['organizations', 'data', 'results'], {})
-          const organizationOptions = [
-            ...organizations
-              .filter((organization) => organization.id)
-              .map((organization) => ({
-                label: String(organization.name ?? organization.email ?? organization.id),
-                value: String(organization.id),
-              })),
-          ]
+          const organizationOptions = organizations
+            .filter((organization) => organization.id)
+            .map((organization) => ({
+              label: String(organization.name ?? organization.email ?? organization.id),
+              value: String(organization.id),
+            }))
+          const formOrganizationOptions = [{ label: 'Sin organizacion', value: '' }, ...organizationOptions]
           const defaultOrganization = organizationOptions.find((option) => normalizeText(option.label).includes('gobierno rd')) ?? organizationOptions[0]
 
           setFields((current) => current.map((field) => (
             field.key === 'organization_id'
-              ? { ...field, defaultValue: defaultOrganization?.value ?? '', options: organizationOptions }
+              ? { ...field, defaultValue: defaultOrganization?.value ?? '', options: formOrganizationOptions }
+              : field
+          )))
+          setFilterFields((current) => current.map((field) => (
+            field.key === 'organization_id'
+              ? { ...field, options: [{ label: 'Todas', value: '' }, ...organizationOptions] }
               : field
           )))
           setForm((current) => current.organization_id ? current : { ...current, organization_id: defaultOrganization?.value ?? '' })
@@ -174,10 +185,10 @@ function ResourcePage({ config, onToast }: ResourcePageProps) {
           </div>
         </div>
 
-        {config.filters && (
+        {filterFields.length > 0 && (
           <Panel title="Busqueda rapida" action={<button className="icon-tab" onClick={loadRecords} aria-label={`Actualizar ${config.title}`}><FiDownload /></button>}>
             <div className="grid items-end gap-3 md:grid-cols-3">
-              {config.filters.map((field) => (
+              {filterFields.map((field) => (
                 <FieldControl
                   key={field.key}
                   field={field}
