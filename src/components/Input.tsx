@@ -1,4 +1,5 @@
 import type { ReactNode } from 'react'
+import { useId } from 'react'
 
 type InputProps = {
   value: string
@@ -13,15 +14,29 @@ type InputProps = {
 }
 
 function Input({ error, inputMode, label, leftIcon, maxLength, value, onChange, placeholder, type = 'text' }: InputProps) {
+  const id = useId()
+  const visibleLabel = label ?? placeholder
+
   return (
-    <label className="field">
-      {label && <span className="field-label">{label}</span>}
+    <div className="field floating-field">
       <span className="relative block">
         {leftIcon && <span className="field-icon">{leftIcon}</span>}
-        <input className={`input ${leftIcon ? 'pl-10' : ''} ${error ? 'input-error' : ''}`} inputMode={inputMode} maxLength={maxLength} type={type} value={value} placeholder={placeholder} onChange={(event) => onChange(event.target.value)} aria-invalid={Boolean(error)} />
+        <input
+          id={id}
+          className={`input floating-input ${leftIcon ? 'pl-10' : ''} ${error ? 'input-error' : ''}`}
+          inputMode={inputMode}
+          maxLength={maxLength}
+          type={type}
+          value={value}
+          placeholder=" "
+          onChange={(event) => onChange(event.target.value)}
+          aria-invalid={Boolean(error)}
+          aria-label={visibleLabel}
+        />
+        {visibleLabel && <label className={`floating-label ${leftIcon ? 'floating-label-icon' : ''}`} htmlFor={id}>{visibleLabel}</label>}
       </span>
       {error && <span className="field-error">{error}</span>}
-    </label>
+    </div>
   )
 }
 

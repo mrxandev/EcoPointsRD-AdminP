@@ -28,6 +28,7 @@ export function RoleBadge({ role }: { role: UserRole }) {
   const toneByRole: Record<UserRole, BadgeTone> = {
     USER: 'default',
     AGENT: 'success',
+    AUDITOR: 'warning',
     ADMIN: 'info',
   }
 

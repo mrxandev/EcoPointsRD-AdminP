@@ -18,7 +18,7 @@ function DashboardHome({ audits, stats, users, onSelectUser, onShowUsers }: Dash
     { label: 'Usuarios totales', value: summary.total_users, icon: FiUsers, tone: 'bg-primary/10 text-primary' },
     { label: 'Usuarios activos', value: summary.active_users, icon: FiCheckCircle, tone: 'bg-success/15 text-success' },
     { label: 'Misiones publicadas', value: summary.published_missions, icon: FiTarget, tone: 'bg-tertiary/10 text-tertiary' },
-    { label: 'Evidencias pendientes', value: summary.pending_evidences, icon: FiClock, tone: 'bg-warning/15 text-warning' },
+    { label: 'Validaciones pendientes', value: summary.pending_evidences, icon: FiClock, tone: 'bg-warning/15 text-warning' },
     { label: 'Puntos generados', value: summary.total_points_generated, icon: FiAward, tone: 'bg-primary/10 text-primary' },
     { label: 'Canjes realizados', value: summary.total_rewards_redeemed, icon: FiGift, tone: 'bg-tertiary/10 text-tertiary' },
   ]
