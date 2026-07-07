@@ -1,6 +1,6 @@
 import type { DashboardStats, UserFormState, UserRole, UserStatus } from './types'
 
-export const roles: UserRole[] = ['USER', 'AGENT', 'ADMIN']
+export const roles: UserRole[] = ['USER', 'AGENT', 'AUDITOR', 'ADMIN']
 export const statuses: UserStatus[] = ['ACTIVE', 'SUSPENDED', 'BANNED']
 
 export const emptyStats: DashboardStats = {

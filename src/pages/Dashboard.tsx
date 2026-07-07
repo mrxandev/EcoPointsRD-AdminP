@@ -8,6 +8,8 @@ import { useToasts } from '../hooks/useToasts'
 import type { AuthUser } from '../types'
 import AuditPage from './admin/audit/AuditPage'
 import DashboardHome from './admin/dashboard/DashboardHome'
+import ResourcePage from './admin/modules/ResourcePage'
+import { moduleConfigs } from './admin/modules/moduleConfig'
 import type { AdminView } from './admin/types'
 import UsersPage from './admin/users/UsersPage'
 
@@ -50,6 +52,7 @@ function Dashboard({ admin, onLogout }: DashboardProps) {
   return (
     <DashboardLayout
       adminName={admin.first_name}
+      adminRole={admin.role}
       sidebarExpanded={sidebarExpanded}
       view={view}
       onLogout={onLogout}
@@ -105,6 +108,14 @@ function Dashboard({ admin, onLogout }: DashboardProps) {
           users={users.users}
           onFiltersChange={audits.setAuditFilters}
           onLoadAudits={audits.loadAudits}
+        />
+      )}
+
+      {moduleConfigs[view] && (
+        <ResourcePage
+          key={view}
+          config={moduleConfigs[view]}
+          onToast={pushToast}
         />
       )}
     </DashboardLayout>

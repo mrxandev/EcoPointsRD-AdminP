@@ -1,4 +1,4 @@
-export type UserRole = 'USER' | 'AGENT' | 'ADMIN'
+export type UserRole = 'USER' | 'AGENT' | 'AUDITOR' | 'ADMIN'
 export type UserStatus = 'ACTIVE' | 'SUSPENDED' | 'BANNED'
 
 export type AdminUser = {

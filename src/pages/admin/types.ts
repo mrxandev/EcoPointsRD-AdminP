@@ -1,6 +1,16 @@
 import type { AuditLog } from '../../types'
 
-export type AdminView = 'dashboard' | 'users' | 'audit'
+export type AdminView =
+  | 'dashboard'
+  | 'users'
+  | 'organizations'
+  | 'missions'
+  | 'points'
+  | 'rewards'
+  | 'redemptions'
+  | 'recycling'
+  | 'notifications'
+  | 'audit'
 export type SavingAction = 'create' | 'profile' | 'role' | 'status' | null
 
 export type ListResponse<T> =
@@ -36,7 +46,7 @@ export type UserFilters = {
 }
 
 export type RoleChange = {
-  role: 'USER' | 'AGENT' | 'ADMIN'
+  role: 'USER' | 'AGENT' | 'AUDITOR' | 'ADMIN'
   reason: string
 }
 

@@ -11,6 +11,7 @@ import { getUserName } from '../utils'
 type UserDetailProps = {
   selectedUser: AdminUser | null
   editForm: Partial<AdminUser>
+  mode?: 'edit' | 'status' | 'view'
   roleChange: { role: UserRole; reason: string }
   roleReasonError: string
   savingAction: SavingAction
@@ -26,7 +27,7 @@ type UserDetailProps = {
 }
 
 function UserDetail(props: UserDetailProps) {
-  const { selectedUser, editForm, roleChange, roleReasonError, savingAction, statusChange, statusReasonError, userAudits } = props
+  const { mode = 'edit', selectedUser, editForm, roleChange, roleReasonError, savingAction, statusChange, statusReasonError, userAudits } = props
 
   if (!selectedUser) {
     return <Panel title="Detalle"><div className="flex min-h-64 flex-col items-center justify-center text-center text-on-surface-variant"><FiUser size={36} /><p className="mt-3 text-sm">Selecciona un usuario para editar su perfil, rol o estado.</p></div></Panel>
@@ -34,7 +35,23 @@ function UserDetail(props: UserDetailProps) {
 
   return (
     <div className="space-y-6">
-      <Panel title={getUserName(selectedUser)} action={<StatusBadge status={selectedUser.status} />}>
+      {mode === 'view' && (
+        <Panel title={getUserName(selectedUser)} action={<StatusBadge status={selectedUser.status} />}>
+          <div className="detail-grid">
+            <DetailItem label="Email" value={selectedUser.email} />
+            <DetailItem label="Cedula" value={formatDominicanCedula(selectedUser.cedula)} />
+            <DetailItem label="Telefono" value={formatDominicanPhone(selectedUser.phone ?? '')} />
+            <DetailItem label="Rol" value={selectedUser.role} />
+            <DetailItem label="Provincia" value={selectedUser.province ?? '-'} />
+            <DetailItem label="Municipio" value={selectedUser.municipality ?? '-'} />
+            <DetailItem label="Puntos" value={String(selectedUser.points)} />
+            <DetailItem label="Verificado" value={selectedUser.is_verified ? 'Si' : 'No'} />
+          </div>
+        </Panel>
+      )}
+
+      {mode === 'edit' && (
+        <Panel title={getUserName(selectedUser)} action={<StatusBadge status={selectedUser.status} />}>
         <form onSubmit={props.onSubmit} className="space-y-3">
           <Input label="Nombre" placeholder="Nombre" value={String(editForm.first_name ?? '')} onChange={(value) => props.onEditFormChange({ ...editForm, first_name: value })} />
           <Input label="Apellido" placeholder="Apellido" value={String(editForm.last_name ?? '')} onChange={(value) => props.onEditFormChange({ ...editForm, last_name: value })} />
@@ -46,9 +63,11 @@ function UserDetail(props: UserDetailProps) {
           <label className="flex items-center gap-2 text-sm text-on-surface"><input type="checkbox" checked={Boolean(editForm.is_verified)} onChange={(event) => props.onEditFormChange({ ...editForm, is_verified: event.target.checked })} /> Usuario verificado</label>
           <button className="button-primary w-full" disabled={savingAction === 'profile'}><FiEdit3 /> {savingAction === 'profile' ? 'Guardando perfil...' : 'Guardar perfil'}</button>
         </form>
-      </Panel>
+        </Panel>
+      )}
 
-      <Panel title="Rol y estado">
+      {mode === 'status' && (
+        <Panel title="Rol y estado">
         <div className="space-y-3">
           <Select label="Nuevo rol" value={roleChange.role} onChange={(value) => props.onRoleChange({ ...roleChange, role: value as UserRole })} options={roles} />
           <Input label="Razon del cambio de rol" error={roleReasonError} placeholder="Razon del cambio de rol" value={roleChange.reason} onChange={(value) => props.onRoleChange({ ...roleChange, reason: value })} />
@@ -57,11 +76,21 @@ function UserDetail(props: UserDetailProps) {
           <Input label="Razon del cambio de estado" error={statusReasonError} placeholder="Razon del cambio de estado" value={statusChange.reason} onChange={(value) => props.onStatusChange({ ...statusChange, reason: value })} />
           <button className="button-secondary w-full" onClick={props.onUpdateStatus} disabled={savingAction === 'status'}>{savingAction === 'status' ? 'Actualizando estado...' : 'Actualizar estado'}</button>
         </div>
-      </Panel>
+        </Panel>
+      )}
 
-      <Panel title="Auditorias del usuario">
+      {mode === 'view' && <Panel title="Auditorias del usuario">
         <AuditList audits={userAudits.slice(0, 5)} />
-      </Panel>
+      </Panel>}
+    </div>
+  )
+}
+
+function DetailItem({ label, value }: { label: string; value: string }) {
+  return (
+    <div className="detail-item">
+      <span>{label}</span>
+      <strong>{value || '-'}</strong>
     </div>
   )
 }

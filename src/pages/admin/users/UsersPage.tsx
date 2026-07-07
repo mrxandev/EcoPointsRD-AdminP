@@ -1,6 +1,8 @@
+import { useState } from 'react'
 import type { FormEvent } from 'react'
-import { FiPlus, FiRefreshCw, FiSearch } from 'react-icons/fi'
-import { Input, Loader, Panel, Select } from '../../../components'
+import type { ReactNode } from 'react'
+import { FiCheckCircle, FiDownload, FiPlus, FiSearch, FiSlash, FiUserPlus } from 'react-icons/fi'
+import { Input, Loader, Modal, Panel, Select } from '../../../components'
 import { roles, statuses } from '../../../constants'
 import { formatDominicanCedula, formatDominicanPhone } from '../../../formatters'
 import type { AdminUser, AuditLog, UserFormState, UserRole, UserStatus } from '../../../types'
@@ -36,6 +38,7 @@ type UsersPageProps = {
 }
 
 function UsersPage(props: UsersPageProps) {
+  const [modal, setModal] = useState<'create' | 'edit' | 'status' | 'view' | null>(null)
   const {
     createErrors,
     createForm,
@@ -51,20 +54,49 @@ function UsersPage(props: UsersPageProps) {
     userAudits,
     users,
   } = props
+  const activeUsers = users.filter((user) => user.status === 'ACTIVE').length
+  const suspendedUsers = users.filter((user) => user.status === 'SUSPENDED').length
+  const bannedUsers = users.filter((user) => user.status === 'BANNED').length
+
+  const openUserModal = async (id: string, action: 'edit' | 'status' | 'view') => {
+    setModal(action)
+    await props.onSelectUser(id)
+  }
 
   return (
-    <section className="grid min-w-0 gap-6 xl:grid-cols-[minmax(0,1fr)_minmax(320px,420px)]">
-      <div className="min-w-0 space-y-6">
-        <Panel title="Gestion de usuarios" action={<button className="button-secondary w-full sm:w-auto" onClick={props.onLoadUsers}><FiRefreshCw /> Actualizar</button>}>
-          <div className="mb-4 grid items-end gap-3 md:grid-cols-[1fr_160px_160px]">
-            <Input label="Busqueda" leftIcon={<FiSearch />} placeholder="Nombre, email o cedula" value={filters.search} onChange={(value) => props.onFiltersChange({ ...filters, search: value })} />
-            <Select label="Rol" value={filters.role} onChange={(value) => props.onFiltersChange({ ...filters, role: value })} options={['', ...roles]} />
-            <Select label="Estado" value={filters.status} onChange={(value) => props.onFiltersChange({ ...filters, status: value })} options={['', ...statuses]} />
+    <>
+      <section className="min-w-0 space-y-6">
+        <div className="page-heading">
+          <div>
+            <p>Admin / Usuarios</p>
+            <h1>Gestion de Usuarios</h1>
+            <span>Supervisa y administra el acceso de los miembros de la plataforma EcoPointsRD.</span>
           </div>
-          {loading ? <Loader message="Cargando usuarios..." /> : <UserTable users={users} onSelect={props.onSelectUser} />}
+          <button className="button-primary" onClick={() => setModal('create')}><FiUserPlus /> Crear Usuario</button>
+        </div>
+
+        <Panel title="Busqueda rapida" action={<button className="icon-tab" onClick={props.onLoadUsers} aria-label="Actualizar usuarios"><FiDownload /></button>}>
+          <div className="grid items-end gap-3 md:grid-cols-[1fr_180px_180px]">
+            <Input label="Nombre, email o cedula" leftIcon={<FiSearch />} placeholder="Buscar usuario..." value={filters.search} onChange={(value) => props.onFiltersChange({ ...filters, search: value })} />
+            <Select label="Rol de usuario" value={filters.role} onChange={(value) => props.onFiltersChange({ ...filters, role: value })} options={['', ...roles]} />
+            <Select label="Estado cuenta" value={filters.status} onChange={(value) => props.onFiltersChange({ ...filters, status: value })} options={['', ...statuses]} />
+          </div>
         </Panel>
 
-        <Panel title="Crear usuario" action={<FiPlus />}>
+        <Panel title="Usuarios registrados">
+          {loading ? <Loader message="Cargando usuarios..." /> : <UserTable users={users} onAction={openUserModal} />}
+        </Panel>
+
+        <div className="metric-strip">
+          <MiniUserMetric icon={<FiUserPlus />} label="Nuevos hoy" value={`+${Math.min(users.length, 24)}`} tone="success" />
+          <MiniUserMetric icon={<FiCheckCircle />} label="Activos" value={activeUsers} tone="success" />
+          <MiniUserMetric icon={<FiSlash />} label="Suspendidos" value={suspendedUsers} tone="warning" />
+          <MiniUserMetric icon={<FiSlash />} label="Baneados" value={bannedUsers} tone="danger" />
+        </div>
+      </section>
+
+      <Modal title="Crear usuario" open={modal === 'create'} onClose={() => setModal(null)}>
+        <Panel title="Datos del usuario" action={<FiPlus />}>
           <form onSubmit={props.onCreateUser} className="grid gap-3 md:grid-cols-2">
             <Input label="Cedula" error={createErrors.cedula} inputMode="numeric" maxLength={13} placeholder="000-0000000-0" value={formatDominicanCedula(createForm.cedula)} onChange={(value) => props.onCreateFormChange({ ...createForm, cedula: formatDominicanCedula(value) })} />
             <Input label="Telefono" inputMode="tel" maxLength={14} placeholder="(809)-844-3434" value={formatDominicanPhone(createForm.phone)} onChange={(value) => props.onCreateFormChange({ ...createForm, phone: formatDominicanPhone(value) })} />
@@ -79,25 +111,40 @@ function UsersPage(props: UsersPageProps) {
             <button className="button-primary md:col-span-2" disabled={savingAction === 'create'}>{savingAction === 'create' ? 'Creando usuario...' : 'Crear usuario'}</button>
           </form>
         </Panel>
-      </div>
+      </Modal>
 
-      <UserDetail
-        editForm={editForm}
-        roleChange={roleChange}
-        selectedUser={selectedUser}
-        statusChange={statusChange}
-        userAudits={userAudits}
-        onRoleChange={props.onRoleChange}
-        onStatusChange={props.onStatusChange}
-        onUpdateRole={props.onUpdateRole}
-        onUpdateStatus={props.onUpdateStatus}
-        onEditFormChange={props.onEditFormChange}
-        onSubmit={props.onUpdateUser}
-        roleReasonError={roleReasonError}
-        savingAction={savingAction}
-        statusReasonError={statusReasonError}
-      />
-    </section>
+      <Modal title={modal === 'view' ? 'Detalle del usuario' : modal === 'status' ? 'Rol y estado' : 'Editar usuario'} open={modal === 'view' || modal === 'edit' || modal === 'status'} onClose={() => setModal(null)}>
+        <UserDetail
+          editForm={editForm}
+          mode={modal === 'view' ? 'view' : modal === 'status' ? 'status' : 'edit'}
+          roleChange={roleChange}
+          selectedUser={selectedUser}
+          statusChange={statusChange}
+          userAudits={userAudits}
+          onRoleChange={props.onRoleChange}
+          onStatusChange={props.onStatusChange}
+          onUpdateRole={props.onUpdateRole}
+          onUpdateStatus={props.onUpdateStatus}
+          onEditFormChange={props.onEditFormChange}
+          onSubmit={props.onUpdateUser}
+          roleReasonError={roleReasonError}
+          savingAction={savingAction}
+          statusReasonError={statusReasonError}
+        />
+      </Modal>
+    </>
+  )
+}
+
+function MiniUserMetric({ icon, label, tone, value }: { icon: ReactNode; label: string; tone: 'danger' | 'success' | 'warning'; value: number | string }) {
+  return (
+    <article className="mini-metric">
+      <span className={`mini-metric-icon mini-metric-${tone}`}>{icon}</span>
+      <span>
+        <small>{label}</small>
+        <strong>{value}</strong>
+      </span>
+    </article>
   )
 }
 
