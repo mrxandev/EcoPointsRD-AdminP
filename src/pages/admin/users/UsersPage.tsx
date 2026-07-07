@@ -53,9 +53,9 @@ function UsersPage(props: UsersPageProps) {
   } = props
 
   return (
-    <section className="grid gap-6 xl:grid-cols-[1fr_420px]">
-      <div className="space-y-6">
-        <Panel title="Gestion de usuarios" action={<button className="button-secondary" onClick={props.onLoadUsers}><FiRefreshCw /> Actualizar</button>}>
+    <section className="grid min-w-0 gap-6 xl:grid-cols-[minmax(0,1fr)_minmax(320px,420px)]">
+      <div className="min-w-0 space-y-6">
+        <Panel title="Gestion de usuarios" action={<button className="button-secondary w-full sm:w-auto" onClick={props.onLoadUsers}><FiRefreshCw /> Actualizar</button>}>
           <div className="mb-4 grid items-end gap-3 md:grid-cols-[1fr_160px_160px]">
             <Input label="Busqueda" leftIcon={<FiSearch />} placeholder="Nombre, email o cedula" value={filters.search} onChange={(value) => props.onFiltersChange({ ...filters, search: value })} />
             <Select label="Rol" value={filters.role} onChange={(value) => props.onFiltersChange({ ...filters, role: value })} options={['', ...roles]} />

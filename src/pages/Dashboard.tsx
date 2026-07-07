@@ -1,4 +1,4 @@
-import { useEffect, useState } from 'react'
+import { useCallback, useEffect, useState } from 'react'
 import { getApiErrorMessage } from '../api'
 import { DashboardLayout, ToastContainer } from '../components'
 import { useAdminAudits } from '../hooks/useAdminAudits'
@@ -21,29 +21,31 @@ function Dashboard({ admin, onLogout }: DashboardProps) {
   const [sidebarExpanded, setSidebarExpanded] = useState(true)
   const { closeToast, pushToast, toasts } = useToasts()
 
-  const handleError = (error: unknown) => {
+  const handleError = useCallback((error: unknown) => {
     const text = getApiErrorMessage(error)
     pushToast(text, 'error')
 
     if (text.includes('Token') || text.includes('permisos')) {
       onLogout()
     }
-  }
+  }, [onLogout, pushToast])
 
   const dashboard = useAdminDashboard(handleError)
+  const { loadDashboard } = dashboard
   const users = useAdminUsers({
     onAfterMutation: async () => {
-      await dashboard.loadDashboard()
+      await loadDashboard()
     },
     onError: handleError,
     onToast: pushToast,
   })
   const audits = useAdminAudits(users.users, handleError)
+  const { loadAudits } = audits
 
   useEffect(() => {
-    void dashboard.loadDashboard()
-    void audits.loadAudits()
-  }, [])
+    void loadDashboard()
+    void loadAudits()
+  }, [loadAudits, loadDashboard])
 
   return (
     <DashboardLayout

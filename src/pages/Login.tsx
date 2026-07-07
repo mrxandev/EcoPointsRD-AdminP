@@ -4,6 +4,15 @@ import { FiLock } from 'react-icons/fi'
 import { api, apiDisplayUrl, getApiErrorMessage } from '../api'
 import type { AuthUser } from '../types'
 
+type LoginResponse = {
+  token?: string
+  user?: AuthUser
+  data?: {
+    token?: string
+    user?: AuthUser
+  }
+}
+
 type LoginProps = {
   onLogin: (token: string, user: AuthUser) => void
 }
@@ -19,14 +28,21 @@ function Login({ onLogin }: LoginProps) {
     setMessage('')
 
     try {
-      const { data } = await api.post<{ token: string; user: AuthUser }>('/api/auth/login', loginForm)
+      const { data } = await api.post<LoginResponse>('/api/auth/login', loginForm)
+      const token = data.data?.token ?? data.token
+      const user = data.data?.user ?? data.user
 
-      if (data.user.role !== 'ADMIN') {
+      if (!token || !user) {
+        setMessage('La API no devolvio una sesion valida.')
+        return
+      }
+
+      if (user.role !== 'ADMIN') {
         setMessage('Este usuario no tiene permisos de administrador.')
         return
       }
 
-      onLogin(data.token, data.user)
+      onLogin(token, user)
     } catch (error) {
       setMessage(getApiErrorMessage(error))
     } finally {

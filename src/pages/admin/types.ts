@@ -6,7 +6,7 @@ export type SavingAction = 'create' | 'profile' | 'role' | 'status' | null
 export type ListResponse<T> =
   | T[]
   | {
-      data?: T[]
+      data?: T[] | Record<string, unknown>
       users?: T[]
       auditLogs?: T[]
       logs?: T[]
@@ -16,7 +16,7 @@ export type ListResponse<T> =
 export type DetailResponse<T> =
   | T
   | {
-      data?: T
+      data?: T | Record<string, unknown>
       user?: T
       auditLog?: T
       result?: T

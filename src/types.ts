@@ -29,14 +29,82 @@ export type AuthUser = Pick<
   'id' | 'cedula' | 'first_name' | 'last_name' | 'email' | 'phone' | 'role' | 'status' | 'points' | 'is_verified'
 >
 
+export type DashboardSummary = {
+  total_users: number
+  active_users: number
+  total_missions: number
+  published_missions: number
+  completed_missions: number
+  total_points_generated: number
+  total_rewards_redeemed: number
+  pending_evidences: number
+}
+
+export type DashboardCount = {
+  total: number
+}
+
+export type DashboardLabelCount = DashboardCount & {
+  role?: string
+  status?: string
+  mission_type?: string
+  month?: string
+}
+
+export type DashboardMissionItem = {
+  id: string
+  title: string
+  registrations?: number
+  points?: number
+}
+
+export type DashboardPointTotals = {
+  delivered: number
+  redeemed: number
+}
+
+export type DashboardTopUser = Pick<AdminUser, 'id' | 'first_name' | 'last_name' | 'points'>
+
+export type DashboardPointTransaction = {
+  id: string
+  user_id?: string | null
+  points: number
+  transaction_type: string
+  description?: string | null
+  created_at?: string
+}
+
+export type DashboardRewardItem = {
+  id: string
+  title: string
+  redemptions?: number
+  stock?: number
+}
+
 export type DashboardStats = {
-  totalUsers: number
-  activeUsers: number
-  suspendedUsers: number
-  bannedUsers: number
-  totalAgents: number
-  totalAdmins: number
-  verifiedUsers: number
+  summary: DashboardSummary
+  users: {
+    byRole: DashboardLabelCount[]
+    byStatus: DashboardLabelCount[]
+    registeredByMonth: DashboardLabelCount[]
+  }
+  missions: {
+    byType: DashboardLabelCount[]
+    byStatus: DashboardLabelCount[]
+    mostPopular: DashboardMissionItem[]
+    mostPointsAwarded: DashboardMissionItem[]
+  }
+  points: {
+    totals: DashboardPointTotals
+    topUsers: DashboardTopUser[]
+    recentTransactions: DashboardPointTransaction[]
+  }
+  rewards: {
+    mostRedeemed: DashboardRewardItem[]
+    outOfStock: DashboardRewardItem[]
+    pendingRedemptions: number
+    deliveredRedemptions: number
+  }
 }
 
 export type AuditLog = {

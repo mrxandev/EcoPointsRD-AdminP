@@ -12,15 +12,15 @@ function UserTable({ users, onSelect }: UserTableProps) {
   }
 
   return (
-    <div className="overflow-x-auto">
-      <table className="w-full min-w-[760px] text-left text-sm">
+    <div className="-mx-4 overflow-x-auto px-4 sm:mx-0 sm:px-0">
+      <table className="w-full min-w-[680px] text-left text-sm sm:min-w-[760px]">
         <thead className="text-xs uppercase text-on-surface-variant">
           <tr><th className="p-3">Usuario</th><th className="p-3">Rol</th><th className="p-3">Estado</th><th className="p-3">Puntos</th><th className="p-3">Verificado</th></tr>
         </thead>
         <tbody>
           {users.map((user) => (
             <tr key={user.id} className="cursor-pointer border-t border-outline-variant hover:bg-surface-container-low" onClick={() => onSelect(user.id)}>
-              <td className="p-3"><strong>{user.first_name} {user.last_name}</strong><p className="text-xs text-on-surface-variant">{user.email}</p></td>
+              <td className="p-3"><strong className="break-words">{user.first_name} {user.last_name}</strong><p className="break-all text-xs text-on-surface-variant">{user.email}</p></td>
               <td className="p-3"><RoleBadge role={user.role} /></td>
               <td className="p-3"><StatusBadge status={user.status} /></td>
               <td className="p-3">{user.points}</td>

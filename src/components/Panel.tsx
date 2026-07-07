@@ -8,10 +8,10 @@ type PanelProps = {
 
 function Panel({ title, action, children }: PanelProps) {
   return (
-    <section className="rounded-lg border border-outline-variant bg-surface-container-lowest p-4 shadow-soft">
-      <div className="mb-4 flex items-center justify-between gap-3">
-        <h3 className="text-lg font-semibold text-on-surface">{title}</h3>
-        {action}
+    <section className="min-w-0 rounded-lg border border-outline-variant bg-surface-container-lowest p-4 shadow-soft">
+      <div className="mb-4 flex flex-col gap-3 sm:flex-row sm:items-center sm:justify-between">
+        <h3 className="min-w-0 break-words text-lg font-semibold text-on-surface">{title}</h3>
+        {action && <div className="flex shrink-0 items-center">{action}</div>}
       </div>
       {children}
     </section>
