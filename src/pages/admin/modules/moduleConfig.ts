@@ -1,6 +1,14 @@
 import type { AdminView } from '../types'
 import type { SelectOption } from '../../../components/Select'
 
+const missionTypeOptions: SelectOption[] = [
+  { label: 'Todos', value: '' },
+  { label: 'Reciclaje', value: 'RECYCLING' },
+  { label: 'Limpieza', value: 'CLEANUP' },
+  { label: 'Educacion', value: 'EDUCATION' },
+  { label: 'Comunidad', value: 'COMMUNITY' },
+]
+
 export type ModuleField = {
   allowOther?: boolean
   defaultValue?: string
@@ -72,8 +80,8 @@ export const moduleConfigs: Partial<Record<AdminView, ModuleConfig>> = {
     canUpdate: true,
     filters: [
       { key: 'status', label: 'Estado', type: 'select', options: ['', 'DRAFT', 'PUBLISHED', 'IN_PROGRESS', 'COMPLETED', 'CANCELLED'] },
-      { key: 'type', label: 'Tipo' },
-      { key: 'organization_id', label: 'Organizacion ID' },
+      { key: 'type', label: 'Tipo', type: 'select', options: missionTypeOptions },
+      { key: 'organization_id', label: 'Organizacion', type: 'select', options: [{ label: 'Todas', value: '' }] },
     ],
     fields: [
       { key: 'title', label: 'Titulo', required: true },
@@ -86,10 +94,7 @@ export const moduleConfigs: Partial<Record<AdminView, ModuleConfig>> = {
         required: true,
         defaultValue: 'RECYCLING',
         options: [
-          { label: 'Reciclaje', value: 'RECYCLING' },
-          { label: 'Limpieza', value: 'CLEANUP' },
-          { label: 'Educacion', value: 'EDUCATION' },
-          { label: 'Comunidad', value: 'COMMUNITY' },
+          ...missionTypeOptions.filter((option) => typeof option !== 'string' && option.value),
           { label: 'Otro', value: 'Otro' },
         ],
       },
