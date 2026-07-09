@@ -58,7 +58,7 @@ function Login({ onLogin }: LoginProps) {
         <div className="relative flex h-full items-center px-12 py-14">
           <div className="max-w-2xl space-y-8">
             <span className="inline-flex w-fit rounded-full border border-white/20 bg-white/10 px-4 py-2 text-sm font-normal">EcoPointsRD Admin</span>
-            <h1 className="max-w-xl text-5xl font-semibold leading-tight">Gobernanza clara para impacto ambiental medible.</h1>
+            <h1 className="max-w-xl text-5xl font-semibold leading-tight">Centro de Control de Actividades Ecológicas</h1>
             <div className="grid max-w-xl gap-3 sm:grid-cols-2">
               <div className="rounded-[18px] border border-white/15 bg-white/10 px-4 py-3 backdrop-blur-sm">
                 <p className="text-sm font-semibold text-white">Control centralizado</p>
