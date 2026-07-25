@@ -1,5 +1,5 @@
 import { FiEdit2, FiEye, FiSlash } from 'react-icons/fi'
-import { RoleBadge, StatusBadge } from '../../../components'
+import { RoleBadge, StatusBadge, TableActionButton } from '../../../components'
 import { formatDate } from '../utils'
 import type { AdminUser } from '../../../types'
 
@@ -46,9 +46,9 @@ function UserTable({ onAction, onSelect, users }: UserTableProps) {
                 <td>{formatDate(user.created_at)}</td>
                 <td>
                   <div className="table-actions justify-end">
-                    <ActionButton label="Ver detalle" onClick={() => handleAction(user.id, 'view', onAction, onSelect)}><FiEye /></ActionButton>
-                    <ActionButton label="Editar usuario" onClick={() => handleAction(user.id, 'edit', onAction, onSelect)}><FiEdit2 /></ActionButton>
-                    <ActionButton danger label="Rol y estado" onClick={() => handleAction(user.id, 'status', onAction, onSelect)}><FiSlash /></ActionButton>
+                    <TableActionButton label="Ver detalle" onClick={() => handleAction(user.id, 'view', onAction, onSelect)}><FiEye /></TableActionButton>
+                    <TableActionButton label="Editar usuario" onClick={() => handleAction(user.id, 'edit', onAction, onSelect)}><FiEdit2 /></TableActionButton>
+                    <TableActionButton danger label="Rol y estado" onClick={() => handleAction(user.id, 'status', onAction, onSelect)}><FiSlash /></TableActionButton>
                   </div>
                 </td>
               </tr>
@@ -65,15 +65,6 @@ function UserTable({ onAction, onSelect, users }: UserTableProps) {
         </div>
       </div>
     </div>
-  )
-}
-
-function ActionButton({ children, danger = false, label, onClick }: { children: React.ReactNode; danger?: boolean; label: string; onClick: () => void }) {
-  return (
-    <button className={`table-icon-button table-action-tooltip ${danger ? 'table-icon-danger' : ''}`} onClick={onClick} aria-label={label} title={label}>
-      {children}
-      <span>{label}</span>
-    </button>
   )
 }
 

@@ -1,4 +1,4 @@
-import { useCallback, useEffect, useMemo, useState } from 'react'
+import { useCallback, useEffect, useId, useMemo, useState } from 'react'
 import type { FormEvent } from 'react'
 import {
   FiCheckCircle,
@@ -14,8 +14,9 @@ import {
   FiUploadCloud,
   FiXCircle,
 } from 'react-icons/fi'
-import { Badge, Input, Loader, MapPicker, Modal, Panel, Select } from '../../../components'
+import { Badge, Input, Loader, MapPicker, Modal, Panel, Select, TableActionButton } from '../../../components'
 import { getApiErrorMessage } from '../../../api'
+import { onlyDigits } from '../../../formatters'
 import {
   createAdminResource,
   listAdminResource,
@@ -23,19 +24,36 @@ import {
   updateAdminResource,
   type AdminRecord,
 } from '../../../services/adminModulesService'
-import { formatDate } from '../utils'
+import { getAdminUsers } from '../../../services/adminUsersService'
+import type { AdminUser } from '../../../types'
+import { formatDate, getUserName } from '../utils'
 import type { ModuleConfig, ModuleField } from './moduleConfig'
 
 type ResourcePageProps = {
   config: ModuleConfig
+  users: AdminUser[]
   onToast: (message: string, tone?: 'info' | 'success' | 'error') => void
 }
 
-function ResourcePage({ config, onToast }: ResourcePageProps) {
+type ResourceReferences = {
+  missions: AdminRecord[]
+  organizations: AdminRecord[]
+  rewards: AdminRecord[]
+}
+
+type ReferenceOption = {
+  keywords: string
+  label: string
+  value: string
+}
+
+function ResourcePage({ config, onToast, users }: ResourcePageProps) {
   const [fields, setFields] = useState<ModuleField[]>(config.fields ?? [])
   const [filterFields, setFilterFields] = useState<ModuleField[]>(config.filters ?? [])
   const [records, setRecords] = useState<AdminRecord[]>([])
   const [filters, setFilters] = useState<Record<string, string>>({})
+  const [referenceUsers, setReferenceUsers] = useState<AdminUser[]>(users)
+  const [references, setReferences] = useState<ResourceReferences>({ missions: [], organizations: [], rewards: [] })
   const emptyForm = useMemo(() => buildInitialForm(fields), [fields])
   const [form, setForm] = useState<Record<string, unknown>>(emptyForm)
   const [selected, setSelected] = useState<AdminRecord | null>(null)
@@ -46,25 +64,22 @@ function ResourcePage({ config, onToast }: ResourcePageProps) {
   const hasList = config.columns.length > 0
   const isMissionModule = config.endpoint === '/api/admin/missions'
   const formTitle = selected && config.canUpdate ? `Editar ${config.title}` : config.createTitle ?? `Crear ${config.title}`
-
-  useEffect(() => {
-    setFields(config.fields ?? [])
-    setFilterFields(config.filters ?? [])
-    setFilters({})
-  }, [config])
+  const displayFilterFields = useMemo(() => buildDisplayFilterFields(filterFields), [filterFields])
+  const lookupUsers = referenceUsers.length ? referenceUsers : users
+  const resolvedFilters = useMemo(() => resolveUserFilters(filters, lookupUsers), [filters, lookupUsers])
 
   const loadRecords = useCallback(async () => {
     if (!hasList) return
 
     setLoading(true)
     try {
-      setRecords(await listAdminResource(config.endpoint, config.listKeys, filters))
+      setRecords(await listAdminResource(config.endpoint, config.listKeys, resolvedFilters))
     } catch (error) {
       onToast(getApiErrorMessage(error), 'error')
     } finally {
       setLoading(false)
     }
-  }, [config.endpoint, config.listKeys, filters, hasList, onToast])
+  }, [config.endpoint, config.listKeys, hasList, onToast, resolvedFilters])
 
   useEffect(() => {
     const timer = window.setTimeout(() => {
@@ -109,6 +124,29 @@ function ResourcePage({ config, onToast }: ResourcePageProps) {
 
     return () => window.clearTimeout(timer)
   }, [isMissionModule, onToast])
+
+  useEffect(() => {
+    const timer = window.setTimeout(() => {
+      void (async () => {
+        try {
+          const [allUsers, organizations, missions, rewards] = await Promise.all([
+            getAdminUsers({ role: '', status: '', search: '' }),
+            listAdminResource('/api/admin/organizations', ['organizations', 'data', 'results'], {}),
+            listAdminResource('/api/admin/missions', ['missions', 'data', 'results'], {}),
+            listAdminResource('/api/admin/rewards', ['rewards', 'data', 'results'], {}),
+          ])
+
+          setReferenceUsers(allUsers)
+          setReferences({ organizations, missions, rewards })
+        } catch {
+          setReferenceUsers(users)
+          setReferences({ organizations: [], missions: [], rewards: [] })
+        }
+      })()
+    }, 0)
+
+    return () => window.clearTimeout(timer)
+  }, [users])
 
   const handleView = (record: AdminRecord) => {
     setSelected(record)
@@ -188,7 +226,7 @@ function ResourcePage({ config, onToast }: ResourcePageProps) {
         {filterFields.length > 0 && (
           <Panel title="Busqueda rapida" action={<button className="icon-tab" onClick={loadRecords} aria-label={`Actualizar ${config.title}`}><FiDownload /></button>}>
             <div className="grid items-end gap-3 md:grid-cols-3">
-              {filterFields.map((field) => (
+              {displayFilterFields.map((field) => (
                 <FieldControl
                   key={field.key}
                   field={field}
@@ -210,9 +248,11 @@ function ResourcePage({ config, onToast }: ResourcePageProps) {
             <ResourceTable
               actions={config.actions ?? []}
               columns={config.columns}
+              references={references}
               records={records}
               saving={saving}
               selectable={Boolean(config.canUpdate)}
+              users={lookupUsers}
               onAction={handleAction}
               onSelect={handleSelect}
               onView={handleView}
@@ -225,9 +265,11 @@ function ResourcePage({ config, onToast }: ResourcePageProps) {
         <Panel title="Datos del registro">
           <form className="space-y-3" onSubmit={handleSubmit}>
             {fields.map((field) => (
-              <FieldControl
+              <ResourceFieldControl
                 key={field.key}
                 field={field}
+                references={references}
+                users={lookupUsers}
                 value={String(form[field.key] ?? '')}
                 onChange={(value) => setForm((current) => ({ ...current, [field.key]: castFieldValue(field, value) }))}
               />
@@ -247,7 +289,7 @@ function ResourcePage({ config, onToast }: ResourcePageProps) {
       </Modal>
 
       <Modal title={`Detalle de ${config.title}`} open={modal === 'view'} onClose={() => setModal(null)}>
-        <RecordDetail record={selected} />
+        <RecordDetail record={selected} references={references} users={lookupUsers} />
       </Modal>
     </>
   )
@@ -256,18 +298,22 @@ function ResourcePage({ config, onToast }: ResourcePageProps) {
 function ResourceTable({
   actions,
   columns,
+  references,
   records,
   saving,
   selectable,
+  users,
   onAction,
   onSelect,
   onView,
 }: {
   actions: NonNullable<ModuleConfig['actions']>
   columns: string[]
+  references: ResourceReferences
   records: AdminRecord[]
   saving: boolean
   selectable: boolean
+  users: AdminUser[]
   onAction: (record: AdminRecord, action: string) => void
   onSelect: (record: AdminRecord) => void
   onView: (record: AdminRecord) => void
@@ -290,24 +336,24 @@ function ResourceTable({
             <tr key={String(record.id ?? index)} className="align-top">
               {columns.map((column) => (
                 <td key={column} className="max-w-[240px]">
-                  {renderValue(column, record[column])}
+                  {renderValue(column, record[column], references, users)}
                 </td>
               ))}
               {showActions && (
                 <td>
                   <div className="table-actions justify-end">
-                    <button className="table-icon-button" onClick={() => onView(record)} aria-label="Ver registro"><FiEye /></button>
-                    {selectable && <button className="table-icon-button" onClick={() => onSelect(record)} aria-label="Editar registro"><FiEdit2 /></button>}
+                    <TableActionButton label="Ver detalle" onClick={() => onView(record)}><FiEye /></TableActionButton>
+                    {selectable && <TableActionButton label="Editar registro" onClick={() => onSelect(record)}><FiEdit2 /></TableActionButton>}
                     {actions.map((item) => (
-                      <button
+                      <TableActionButton
                         key={item.action}
-                        className={`table-icon-button ${item.tone === 'danger' ? 'table-icon-danger' : ''}`}
+                        danger={item.tone === 'danger'}
                         disabled={saving}
-                        title={item.label}
+                        label={item.label}
                         onClick={() => onAction(record, item.action)}
                       >
                         {getActionIcon(item.action)}
-                      </button>
+                      </TableActionButton>
                     ))}
                   </div>
                 </td>
@@ -326,6 +372,76 @@ function ResourceTable({
         </div>
       </div>
     </div>
+  )
+}
+
+function ResourceFieldControl({
+  field,
+  onChange,
+  references,
+  users,
+  value,
+}: {
+  field: ModuleField
+  onChange: (value: string) => void
+  references: ResourceReferences
+  users: AdminUser[]
+  value: string
+}) {
+  const referenceOptions = getReferenceOptions(field.key, references, users)
+  if (referenceOptions.length) {
+    return <ReferenceFieldControl field={field} options={referenceOptions} value={value} onChange={onChange} />
+  }
+
+  return <FieldControl field={field} value={value} onChange={onChange} />
+}
+
+function ReferenceFieldControl({ field, onChange, options, value }: { field: ModuleField; onChange: (value: string) => void; options: ReferenceOption[]; value: string }) {
+  const listId = useId()
+  const selectedOption = options.find((option) => option.value === value)
+  const [draftValue, setDraftValue] = useState('')
+  const displayValue = selectedOption?.label ?? draftValue
+
+  const selectOption = (text: string) => {
+    setDraftValue(text)
+
+    const exactMatch = options.find((option) => option.label === text)
+    if (exactMatch) {
+      onChange(exactMatch.value)
+      setDraftValue('')
+      return
+    }
+
+    onChange('')
+  }
+
+  const selectBestMatch = () => {
+    if (value || !displayValue.trim()) return
+
+    const match = findReferenceOption(displayValue, options)
+    if (match) {
+      setDraftValue('')
+      onChange(match.value)
+    }
+  }
+
+  return (
+    <label className="field">
+      <span className="field-label">{formatReferenceFieldLabel(field)}</span>
+      <input
+        className="input floating-input"
+        list={listId}
+        placeholder={getReferencePlaceholder(field.key)}
+        value={displayValue}
+        onBlur={selectBestMatch}
+        onChange={(event) => selectOption(event.target.value)}
+      />
+      <datalist id={listId}>
+        {options.map((option) => (
+          <option key={option.value} value={option.label} />
+        ))}
+      </datalist>
+    </label>
   )
 }
 
@@ -417,7 +533,7 @@ function EmptyModule() {
   return <p className="rounded-lg bg-surface-container-low p-4 text-sm text-on-surface-variant">Este modulo usa acciones directas. Completa el formulario lateral para enviar la solicitud al backend.</p>
 }
 
-function RecordDetail({ record }: { record: AdminRecord | null }) {
+function RecordDetail({ record, references, users }: { record: AdminRecord | null; references: ResourceReferences; users: AdminUser[] }) {
   if (!record) return <p className="table-empty">No hay registro seleccionado.</p>
 
   return (
@@ -425,7 +541,7 @@ function RecordDetail({ record }: { record: AdminRecord | null }) {
       {Object.entries(record).map(([key, value]) => (
         <div className="detail-item" key={key}>
           <span>{formatColumn(key)}</span>
-          <strong>{formatDetailValue(value)}</strong>
+          <strong>{formatDetailValue(key, value, references, users)}</strong>
         </div>
       ))}
     </div>
@@ -463,11 +579,13 @@ function resolveCreateEndpoint(config: ModuleConfig, form: Record<string, unknow
   return config.createEndpoint ?? config.endpoint
 }
 
-function renderValue(column: string, value: unknown) {
+function renderValue(column: string, value: unknown, references: ResourceReferences, users: AdminUser[]) {
   if (column === 'created_at' || column.endsWith('_at')) return <span className="text-on-surface-variant">{formatDate(String(value ?? ''))}</span>
   if (column === 'status' && value) return <Badge label={String(value)} tone={badgeTone(String(value))} />
   if (typeof value === 'boolean') return value ? 'Si' : 'No'
   if (value === null || value === undefined || value === '') return <span className="text-on-surface-variant">-</span>
+  const label = resolveReferenceLabel(column, value, references, users)
+  if (label) return <span className="break-words">{label}</span>
   return <span className="break-words">{String(value)}</span>
 }
 
@@ -489,13 +607,171 @@ function getActionIcon(action: string) {
 }
 
 function formatColumn(column: string) {
+  if (column === 'user_id') return 'Usuario'
+  if (column === 'organization_id') return 'Organizacion'
+  if (column === 'sponsor_id') return 'Patrocinador'
+  if (column === 'center_id') return 'Centro'
+  if (column === 'mission_id') return 'Mision'
+  if (column === 'reward_id') return 'Recompensa'
   return column.replaceAll('_', ' ')
 }
 
-function formatDetailValue(value: unknown) {
+function formatDetailValue(key: string, value: unknown, references: ResourceReferences, users: AdminUser[]) {
   if (value === null || value === undefined || value === '') return '-'
+  const label = resolveReferenceLabel(key, value, references, users)
+  if (label) return label
   if (typeof value === 'object') return JSON.stringify(value)
   return String(value)
+}
+
+function buildDisplayFilterFields(fields: ModuleField[]) {
+  return fields.map((field) => {
+    if (field.key === 'user_id') {
+      return { ...field, label: 'Usuario', type: 'text' as const }
+    }
+
+    if (field.key === 'search') {
+      return { ...field, label: 'Nombre' }
+    }
+
+    return field
+  })
+}
+
+function getReferenceOptions(fieldKey: string, references: ResourceReferences, users: AdminUser[]): ReferenceOption[] {
+  if (fieldKey === 'user_id') {
+    return users.map((user) => ({
+      value: user.id,
+      label: `${getUserName(user)} - ${user.cedula}`,
+      keywords: normalizeText([getUserName(user), user.cedula, onlyDigits(user.cedula), user.email].filter(Boolean).join(' ')),
+    }))
+  }
+
+  if (fieldKey === 'organization_id' || fieldKey === 'sponsor_id' || fieldKey === 'center_id') {
+    return recordsToReferenceOptions(references.organizations, ['name', 'email', 'organization_type'])
+  }
+
+  if (fieldKey === 'reward_id') {
+    return recordsToReferenceOptions(references.rewards, ['title', 'name'])
+  }
+
+  if (fieldKey === 'mission_id') {
+    return recordsToReferenceOptions(references.missions, ['title', 'name', 'mission_type'])
+  }
+
+  return []
+}
+
+function recordsToReferenceOptions(records: AdminRecord[], labelKeys: string[]) {
+  return records
+    .filter((record) => record.id)
+    .map((record) => {
+      const labelValue = labelKeys.map((key) => record[key]).find((value) => value) ?? record.id
+      const secondaryValue = labelKeys
+        .slice(1)
+        .map((key) => record[key])
+        .find((value) => value && value !== labelValue)
+      const label = secondaryValue ? `${labelValue} - ${secondaryValue}` : String(labelValue)
+
+      return {
+        value: String(record.id),
+        label,
+        keywords: normalizeText([label, record.id].filter(Boolean).join(' ')),
+      }
+    })
+}
+
+function findReferenceOption(search: string, options: ReferenceOption[]) {
+  const normalizedSearch = normalizeText(search)
+  const searchDigits = onlyDigits(search)
+
+  return options.find((option) => {
+    if (option.label === search) return true
+    if (option.keywords.includes(normalizedSearch)) return true
+    return Boolean(searchDigits && option.keywords.includes(searchDigits))
+  })
+}
+
+function formatReferenceFieldLabel(field: ModuleField) {
+  if (field.key === 'user_id') return field.required ? 'Usuario' : 'Usuario opcional'
+  if (field.key === 'organization_id') return 'Organizacion'
+  if (field.key === 'sponsor_id') return 'Patrocinador'
+  if (field.key === 'center_id') return 'Centro'
+  if (field.key === 'reward_id') return 'Recompensa'
+  if (field.key === 'mission_id') return 'Mision'
+  return field.label
+}
+
+function getReferencePlaceholder(fieldKey: string) {
+  if (fieldKey === 'user_id') return 'Buscar por cedula o nombre'
+  if (fieldKey === 'organization_id' || fieldKey === 'sponsor_id' || fieldKey === 'center_id') return 'Buscar por nombre'
+  if (fieldKey === 'reward_id') return 'Buscar recompensa'
+  if (fieldKey === 'mission_id') return 'Buscar mision'
+  return 'Buscar'
+}
+
+function resolveUserFilters(filters: Record<string, string>, users: AdminUser[]) {
+  const userSearch = filters.user_id?.trim()
+  if (!userSearch) return filters
+
+  const user = findUserBySearch(userSearch, users)
+  return { ...filters, user_id: user?.id ?? '__no_user_match__' }
+}
+
+function findUserBySearch(search: string, users: AdminUser[]) {
+  const normalizedSearch = normalizeText(search)
+  const cedulaDigits = onlyDigits(search)
+
+  return users.find((user) => {
+    const searchable = [
+      user.cedula,
+      cedulaDigits ? onlyDigits(user.cedula) : '',
+      user.first_name,
+      user.last_name,
+      getUserName(user),
+      user.email,
+    ]
+      .filter(Boolean)
+      .map((value) => normalizeText(String(value)))
+
+    return searchable.some((value) => value.includes(normalizedSearch) || (cedulaDigits && value.includes(cedulaDigits)))
+  })
+}
+
+function resolveReferenceLabel(column: string, value: unknown, references: ResourceReferences, users: AdminUser[]) {
+  const id = String(value)
+  if (!id) return ''
+
+  if (column === 'user_id' || column.endsWith('_user_id')) {
+    const user = users.find((item) => item.id === id)
+    return user ? `${getUserName(user)} (${user.cedula})` : shortId(id)
+  }
+
+  if (column === 'organization_id' || column === 'sponsor_id' || column === 'center_id') {
+    return findRecordLabel(id, references.organizations, ['name', 'email']) || shortId(id)
+  }
+
+  if (column === 'mission_id') {
+    return findRecordLabel(id, references.missions, ['title', 'name']) || shortId(id)
+  }
+
+  if (column === 'reward_id') {
+    return findRecordLabel(id, references.rewards, ['title', 'name']) || shortId(id)
+  }
+
+  return ''
+}
+
+function findRecordLabel(id: string, records: AdminRecord[], keys: string[]) {
+  const record = records.find((item) => item.id === id)
+  if (!record) return ''
+
+  const label = keys.map((key) => record[key]).find((value) => value)
+  return label ? String(label) : ''
+}
+
+function shortId(id: string) {
+  return id.length > 12 ? `ID ${id.slice(0, 8)}...` : id
 }
 
 function normalizeText(value: string) {

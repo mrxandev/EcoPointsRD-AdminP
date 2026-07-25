@@ -63,11 +63,7 @@ function Dashboard({ admin, onLogout }: DashboardProps) {
 
       {view === 'dashboard' && (
         <DashboardHome
-          audits={audits.audits}
           stats={dashboard.stats}
-          users={users.users}
-          onSelectUser={users.selectUser}
-          onShowUsers={() => setView('users')}
         />
       )}
 
@@ -115,6 +111,7 @@ function Dashboard({ admin, onLogout }: DashboardProps) {
         <ResourcePage
           key={view}
           config={moduleConfigs[view]}
+          users={users.users}
           onToast={pushToast}
         />
       )}
