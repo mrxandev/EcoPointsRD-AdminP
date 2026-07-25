@@ -1,18 +1,12 @@
 import { FiAward, FiCheckCircle, FiClock, FiGift, FiTarget, FiTrendingUp, FiUsers } from 'react-icons/fi'
 import { Panel, StatCard } from '../../../components'
-import type { AdminUser, AuditLog, DashboardLabelCount, DashboardMissionItem, DashboardRewardItem, DashboardStats, DashboardTopUser } from '../../../types'
-import AuditList from '../components/AuditList'
-import UserTable from '../users/UserTable'
+import type { DashboardLabelCount, DashboardMissionItem, DashboardRewardItem, DashboardStats, DashboardTopUser } from '../../../types'
 
 type DashboardHomeProps = {
-  audits: AuditLog[]
   stats: DashboardStats
-  users: AdminUser[]
-  onSelectUser: (id: string) => void
-  onShowUsers: () => void
 }
 
-function DashboardHome({ audits, stats, users, onSelectUser, onShowUsers }: DashboardHomeProps) {
+function DashboardHome({ stats }: DashboardHomeProps) {
   const { missions, points, rewards, summary } = stats
   const cards = [
     { label: 'Usuarios totales', value: summary.total_users, icon: FiUsers, tone: 'bg-primary/10 text-primary' },
@@ -80,14 +74,6 @@ function DashboardHome({ audits, stats, users, onSelectUser, onShowUsers }: Dash
         </Panel>
       </section>
 
-      <section className="grid min-w-0 gap-6 xl:grid-cols-[minmax(0,1.2fr)_minmax(320px,.8fr)]">
-        <Panel title="Usuarios recientes" action={<button className="button-secondary w-full sm:w-auto" onClick={onShowUsers}>Ver usuarios</button>}>
-          <UserTable users={users.slice(0, 6)} onSelect={onSelectUser} />
-        </Panel>
-        <Panel title="Actividad reciente">
-          <AuditList audits={audits.slice(0, 6)} />
-        </Panel>
-      </section>
     </>
   )
 }
