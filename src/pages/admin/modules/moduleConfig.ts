@@ -79,6 +79,7 @@ export const moduleConfigs: Partial<Record<AdminView, ModuleConfig>> = {
     canCreate: true,
     canUpdate: true,
     filters: [
+      { key: 'search', label: 'Nombre' },
       { key: 'status', label: 'Estado', type: 'select', options: ['', 'DRAFT', 'PUBLISHED', 'IN_PROGRESS', 'COMPLETED', 'CANCELLED'] },
       { key: 'type', label: 'Tipo', type: 'select', options: missionTypeOptions },
       { key: 'organization_id', label: 'Organizacion', type: 'select', options: [{ label: 'Todas', value: '' }] },
@@ -139,7 +140,7 @@ export const moduleConfigs: Partial<Record<AdminView, ModuleConfig>> = {
     listKeys: ['transactions', 'data', 'results'],
     columns: ['user_id', 'points', 'transaction_type', 'description', 'created_at'],
     filters: [
-      { key: 'user_id', label: 'Usuario ID' },
+      { key: 'user_id', label: 'Usuario' },
       { key: 'type', label: 'Tipo', type: 'select', options: ['', 'BONUS', 'PENALTY', 'EARNED', 'REDEEMED'] },
       { key: 'from', label: 'Desde', type: 'date' },
       { key: 'to', label: 'Hasta', type: 'date' },
@@ -148,7 +149,7 @@ export const moduleConfigs: Partial<Record<AdminView, ModuleConfig>> = {
     canCreate: true,
     createEndpoint: '/api/admin/points/adjust',
     fields: [
-      { key: 'user_id', label: 'Usuario ID', required: true },
+      { key: 'user_id', label: 'Usuario', required: true },
       { key: 'points', label: 'Puntos', type: 'number', required: true },
       { key: 'transaction_type', label: 'Tipo', type: 'select', required: true, options: ['BONUS', 'PENALTY'] },
       { key: 'description', label: 'Descripcion' },
@@ -162,13 +163,17 @@ export const moduleConfigs: Partial<Record<AdminView, ModuleConfig>> = {
     columns: ['title', 'points_required', 'stock', 'status', 'sponsor_id', 'created_at'],
     canCreate: true,
     canUpdate: true,
+    filters: [
+      { key: 'search', label: 'Nombre' },
+      { key: 'status', label: 'Estado', type: 'select', options: ['', 'ACTIVE', 'INACTIVE'] },
+    ],
     fields: [
       { key: 'title', label: 'Titulo', required: true },
       { key: 'description', label: 'Descripcion', type: 'textarea' },
       { key: 'points_required', label: 'Puntos requeridos', type: 'number', required: true },
       { key: 'stock', label: 'Stock', type: 'number' },
       { key: 'image_url', label: 'Imagen URL' },
-      { key: 'sponsor_id', label: 'Sponsor ID' },
+      { key: 'sponsor_id', label: 'Patrocinador' },
     ],
     actions: [
       { action: 'activate', label: 'Activar', tone: 'success' },
@@ -181,6 +186,10 @@ export const moduleConfigs: Partial<Record<AdminView, ModuleConfig>> = {
     endpoint: '/api/admin/redemptions',
     listKeys: ['redemptions', 'data', 'results'],
     columns: ['reward_id', 'user_id', 'points_spent', 'status', 'created_at'],
+    filters: [
+      { key: 'user_id', label: 'Usuario' },
+      { key: 'status', label: 'Estado', type: 'select', options: ['', 'PENDING', 'APPROVED', 'DELIVERED', 'CANCELLED'] },
+    ],
     actions: [
       { action: 'approve', label: 'Aprobar', tone: 'success' },
       { action: 'deliver', label: 'Entregar', tone: 'success' },
@@ -194,9 +203,13 @@ export const moduleConfigs: Partial<Record<AdminView, ModuleConfig>> = {
     listKeys: ['recyclingLogs', 'data', 'results'],
     columns: ['user_id', 'center_id', 'material_type', 'weight_kg', 'points_awarded', 'created_at'],
     canCreate: true,
+    filters: [
+      { key: 'user_id', label: 'Usuario' },
+      { key: 'material_type', label: 'Material' },
+    ],
     fields: [
-      { key: 'user_id', label: 'Usuario ID', required: true },
-      { key: 'center_id', label: 'Centro ID' },
+      { key: 'user_id', label: 'Usuario', required: true },
+      { key: 'center_id', label: 'Centro' },
       { key: 'material_type', label: 'Material', required: true },
       { key: 'weight_kg', label: 'Peso KG', type: 'number' },
       { key: 'points_awarded', label: 'Puntos otorgados', type: 'number' },
@@ -214,7 +227,7 @@ export const moduleConfigs: Partial<Record<AdminView, ModuleConfig>> = {
       { key: 'title', label: 'Titulo', required: true },
       { key: 'message', label: 'Mensaje', type: 'textarea', required: true },
       { key: 'type', label: 'Tipo' },
-      { key: 'user_id', label: 'Usuario ID opcional' },
+      { key: 'user_id', label: 'Usuario opcional' },
     ],
   },
 }
