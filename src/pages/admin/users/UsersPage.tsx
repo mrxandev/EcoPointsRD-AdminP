@@ -75,6 +75,13 @@ function UsersPage(props: UsersPageProps) {
           <button className="button-primary" onClick={() => setModal('create')}><FiUserPlus /> Crear Usuario</button>
         </div>
 
+        <div className="metric-strip">
+          <MiniUserMetric icon={<FiUserPlus />} label="Nuevos hoy" value={`+${Math.min(users.length, 24)}`} tone="success" />
+          <MiniUserMetric icon={<FiCheckCircle />} label="Activos" value={activeUsers} tone="success" />
+          <MiniUserMetric icon={<FiSlash />} label="Suspendidos" value={suspendedUsers} tone="warning" />
+          <MiniUserMetric icon={<FiSlash />} label="Baneados" value={bannedUsers} tone="danger" />
+        </div>
+
         <Panel title="Busqueda rapida" action={<button className="icon-tab" onClick={props.onLoadUsers} aria-label="Actualizar usuarios"><FiDownload /></button>}>
           <div className="grid items-end gap-3 md:grid-cols-[1fr_180px_180px]">
             <Input label="Nombre, email o cedula" leftIcon={<FiSearch />} placeholder="Buscar usuario..." value={filters.search} onChange={(value) => props.onFiltersChange({ ...filters, search: value })} />
@@ -86,13 +93,6 @@ function UsersPage(props: UsersPageProps) {
         <Panel title="Usuarios registrados">
           {loading ? <Loader message="Cargando usuarios..." /> : <UserTable users={users} onAction={openUserModal} />}
         </Panel>
-
-        <div className="metric-strip">
-          <MiniUserMetric icon={<FiUserPlus />} label="Nuevos hoy" value={`+${Math.min(users.length, 24)}`} tone="success" />
-          <MiniUserMetric icon={<FiCheckCircle />} label="Activos" value={activeUsers} tone="success" />
-          <MiniUserMetric icon={<FiSlash />} label="Suspendidos" value={suspendedUsers} tone="warning" />
-          <MiniUserMetric icon={<FiSlash />} label="Baneados" value={bannedUsers} tone="danger" />
-        </div>
       </section>
 
       <Modal title="Crear usuario" open={modal === 'create'} onClose={() => setModal(null)}>
