@@ -1,4 +1,4 @@
-import { useCallback, useEffect, useId, useMemo, useState } from 'react'
+import { useCallback, useEffect, useMemo, useState } from 'react'
 import type { FormEvent } from 'react'
 import {
   FiCheckCircle,
@@ -400,51 +400,18 @@ function ResourceFieldControl({
 }
 
 function ReferenceFieldControl({ field, onChange, options, value }: { field: ModuleField; onChange: (value: string) => void; options: ReferenceOption[]; value: string }) {
-  const listId = useId()
-  const selectedOption = options.find((option) => option.value === value)
-  const [draftValue, setDraftValue] = useState('')
-  const displayValue = selectedOption?.label ?? draftValue
-
-  const selectOption = (text: string) => {
-    setDraftValue(text)
-
-    const exactMatch = options.find((option) => option.label === text)
-    if (exactMatch) {
-      onChange(exactMatch.value)
-      setDraftValue('')
-      return
-    }
-
-    onChange('')
-  }
-
-  const selectBestMatch = () => {
-    if (value || !displayValue.trim()) return
-
-    const match = findReferenceOption(displayValue, options)
-    if (match) {
-      setDraftValue('')
-      onChange(match.value)
-    }
-  }
+  const selectOptions = [
+    { label: getReferencePlaceholder(field.key) || 'Seleccionar...', value: '' },
+    ...options.map((option) => ({ label: option.label, value: option.value })),
+  ]
 
   return (
-    <label className="field">
-      <span className="field-label">{formatReferenceFieldLabel(field)}</span>
-      <input
-        className="input floating-input"
-        list={listId}
-        placeholder={getReferencePlaceholder(field.key)}
-        value={displayValue}
-        onBlur={selectBestMatch}
-        onChange={(event) => selectOption(event.target.value)}
-      />
-      <datalist id={listId}>
-        {options.map((option) => (
-          <option key={option.value} value={option.label} />
-        ))}
-      </datalist>
-    </label>
+    <Select
+      label={formatReferenceFieldLabel(field)}
+      options={selectOptions}
+      value={value}
+      onChange={onChange}
+    />
   )
 }
 
@@ -707,16 +674,7 @@ function recordsToReferenceOptions(records: AdminRecord[], labelKeys: string[]) 
     })
 }
 
-function findReferenceOption(search: string, options: ReferenceOption[]) {
-  const normalizedSearch = normalizeText(search)
-  const searchDigits = onlyDigits(search)
 
-  return options.find((option) => {
-    if (option.label === search) return true
-    if (option.keywords.includes(normalizedSearch)) return true
-    return Boolean(searchDigits && option.keywords.includes(searchDigits))
-  })
-}
 
 function formatReferenceFieldLabel(field: ModuleField) {
   if (field.key === 'user_id') return field.required ? 'Usuario' : 'Usuario opcional'
