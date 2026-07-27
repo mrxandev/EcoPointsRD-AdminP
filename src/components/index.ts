@@ -1,6 +1,8 @@
 export { default as Badge, RoleBadge, StatusBadge } from './Badge'
 export { default as DashboardLayout } from './DashboardLayout'
 export { default as Input } from './Input'
+export { PhoneInput } from './PhoneInput'
+export { MunicipalityInput, ProvinceInput } from './GeographyInputs'
 export { default as Loader } from './Loader'
 export { default as MapPicker } from './MapPicker'
 export { default as Modal } from './Modal'

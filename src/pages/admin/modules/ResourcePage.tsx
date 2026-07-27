@@ -14,7 +14,7 @@ import {
   FiUploadCloud,
   FiXCircle,
 } from 'react-icons/fi'
-import { Badge, Input, Loader, MapPicker, Modal, Panel, Select, TableActionButton } from '../../../components'
+import { Badge, Input, Loader, MapPicker, Modal, MunicipalityInput, Panel, PhoneInput, ProvinceInput, Select, TableActionButton } from '../../../components'
 import { getApiErrorMessage } from '../../../api'
 import { onlyDigits } from '../../../formatters'
 import {
@@ -268,6 +268,7 @@ function ResourcePage({ config, onToast, users }: ResourcePageProps) {
               <ResourceFieldControl
                 key={field.key}
                 field={field}
+                formValues={form}
                 references={references}
                 users={lookupUsers}
                 value={String(form[field.key] ?? '')}
@@ -377,12 +378,14 @@ function ResourceTable({
 
 function ResourceFieldControl({
   field,
+  formValues,
   onChange,
   references,
   users,
   value,
 }: {
   field: ModuleField
+  formValues?: Record<string, unknown>
   onChange: (value: string) => void
   references: ResourceReferences
   users: AdminUser[]
@@ -393,7 +396,7 @@ function ResourceFieldControl({
     return <ReferenceFieldControl field={field} options={referenceOptions} value={value} onChange={onChange} />
   }
 
-  return <FieldControl field={field} value={value} onChange={onChange} />
+  return <FieldControl field={field} formValues={formValues} value={value} onChange={onChange} />
 }
 
 function ReferenceFieldControl({ field, onChange, options, value }: { field: ModuleField; onChange: (value: string) => void; options: ReferenceOption[]; value: string }) {
@@ -445,7 +448,30 @@ function ReferenceFieldControl({ field, onChange, options, value }: { field: Mod
   )
 }
 
-function FieldControl({ field, onChange, value }: { field: ModuleField; onChange: (value: string) => void; value: string }) {
+function FieldControl({
+  field,
+  formValues,
+  onChange,
+  value,
+}: {
+  field: ModuleField
+  formValues?: Record<string, unknown>
+  onChange: (value: string) => void
+  value: string
+}) {
+  if (field.key === 'phone' || field.key === 'telefono') {
+    return <PhoneInput label={field.label} value={value} onChange={onChange} />
+  }
+
+  if (field.key === 'province' || field.key === 'provincia') {
+    return <ProvinceInput label={field.label} value={value} onChange={onChange} />
+  }
+
+  if (field.key === 'municipality' || field.key === 'municipio') {
+    const selectedProvince = String(formValues?.province ?? formValues?.provincia ?? '')
+    return <MunicipalityInput label={field.label} province={selectedProvince} value={value} onChange={onChange} />
+  }
+
   if (field.type === 'toggle') {
     return <ToggleControl field={field} value={value} onChange={onChange} />
   }

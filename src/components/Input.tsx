@@ -9,11 +9,12 @@ type InputProps = {
   inputMode?: 'text' | 'search' | 'email' | 'tel' | 'url' | 'none' | 'numeric' | 'decimal'
   label?: string
   leftIcon?: ReactNode
+  list?: string
   maxLength?: number
   type?: string
 }
 
-function Input({ error, inputMode, label, leftIcon, maxLength, value, onChange, placeholder, type = 'text' }: InputProps) {
+function Input({ error, inputMode, label, leftIcon, list, maxLength, value, onChange, placeholder, type = 'text' }: InputProps) {
   const id = useId()
   const visibleLabel = label ?? placeholder
 
@@ -25,6 +26,7 @@ function Input({ error, inputMode, label, leftIcon, maxLength, value, onChange, 
           id={id}
           className={`input floating-input ${leftIcon ? 'pl-10' : ''} ${error ? 'input-error' : ''}`}
           inputMode={inputMode}
+          list={list}
           maxLength={maxLength}
           type={type}
           value={value}
