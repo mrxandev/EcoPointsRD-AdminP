@@ -2,9 +2,9 @@ import { useState } from 'react'
 import type { FormEvent } from 'react'
 import type { ReactNode } from 'react'
 import { FiCheckCircle, FiDownload, FiPlus, FiSearch, FiSlash, FiUserPlus } from 'react-icons/fi'
-import { Input, Loader, Modal, Panel, Select } from '../../../components'
+import { Input, Loader, Modal, MunicipalityInput, Panel, PhoneInput, ProvinceInput, Select } from '../../../components'
 import { roles, statuses } from '../../../constants'
-import { formatDominicanCedula, formatDominicanPhone } from '../../../formatters'
+import { formatDominicanCedula } from '../../../formatters'
 import type { AdminUser, AuditLog, UserFormState, UserRole, UserStatus } from '../../../types'
 import type { SavingAction, UserFilters } from '../types'
 import UserDetail from './UserDetail'
@@ -99,15 +99,15 @@ function UsersPage(props: UsersPageProps) {
         <Panel title="Datos del usuario" action={<FiPlus />}>
           <form onSubmit={props.onCreateUser} className="grid gap-3 md:grid-cols-2">
             <Input label="Cedula" error={createErrors.cedula} inputMode="numeric" maxLength={13} placeholder="000-0000000-0" value={formatDominicanCedula(createForm.cedula)} onChange={(value) => props.onCreateFormChange({ ...createForm, cedula: formatDominicanCedula(value) })} />
-            <Input label="Telefono" inputMode="tel" maxLength={14} placeholder="(809)-844-3434" value={formatDominicanPhone(createForm.phone)} onChange={(value) => props.onCreateFormChange({ ...createForm, phone: formatDominicanPhone(value) })} />
+            <PhoneInput label="Telefono" value={createForm.phone} onChange={(value) => props.onCreateFormChange({ ...createForm, phone: value })} />
             <Input label="Nombre" error={createErrors.first_name} placeholder="Nombre" value={createForm.first_name} onChange={(value) => props.onCreateFormChange({ ...createForm, first_name: value })} />
             <Input label="Apellido" error={createErrors.last_name} placeholder="Apellido" value={createForm.last_name} onChange={(value) => props.onCreateFormChange({ ...createForm, last_name: value })} />
             <Input label="Email" error={createErrors.email} placeholder="Email" value={createForm.email} onChange={(value) => props.onCreateFormChange({ ...createForm, email: value })} />
             <Input label="Contraseña" error={createErrors.password} placeholder="Contraseña" type="password" value={createForm.password} onChange={(value) => props.onCreateFormChange({ ...createForm, password: value })} />
             <Select label="Rol" value={createForm.role} onChange={(value) => props.onCreateFormChange({ ...createForm, role: value as UserRole })} options={roles} />
             <Select label="Estado" value={createForm.status} onChange={(value) => props.onCreateFormChange({ ...createForm, status: value as UserStatus })} options={statuses} />
-            <Input label="Provincia" placeholder="Provincia" value={createForm.province} onChange={(value) => props.onCreateFormChange({ ...createForm, province: value })} />
-            <Input label="Municipio" placeholder="Municipio" value={createForm.municipality} onChange={(value) => props.onCreateFormChange({ ...createForm, municipality: value })} />
+            <ProvinceInput value={createForm.province} onChange={(value) => props.onCreateFormChange({ ...createForm, province: value })} />
+            <MunicipalityInput province={createForm.province} value={createForm.municipality} onChange={(value) => props.onCreateFormChange({ ...createForm, municipality: value })} />
             <button className="button-primary md:col-span-2" disabled={savingAction === 'create'}>{savingAction === 'create' ? 'Creando usuario...' : 'Crear usuario'}</button>
           </form>
         </Panel>

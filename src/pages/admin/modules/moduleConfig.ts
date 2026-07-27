@@ -9,6 +9,16 @@ const missionTypeOptions: SelectOption[] = [
   { label: 'Comunidad', value: 'COMMUNITY' },
 ]
 
+const organizationTypeOptions: SelectOption[] = [
+  { label: 'Supermercado', value: 'Supermercado' },
+  { label: 'Super', value: 'Super' },
+  { label: 'ONG', value: 'ONG' },
+  { label: 'Institución Gubernamental', value: 'Institución Gubernamental' },
+  { label: 'Empresa Privada', value: 'Empresa Privada' },
+  { label: 'Centro Educativo', value: 'Centro Educativo' },
+  { label: 'Centro de Reciclaje', value: 'Centro de Reciclaje' },
+]
+
 export type ModuleField = {
   allowOther?: boolean
   defaultValue?: string
@@ -51,13 +61,18 @@ export const moduleConfigs: Partial<Record<AdminView, ModuleConfig>> = {
     canUpdate: true,
     filters: [
       { key: 'search', label: 'Busqueda' },
-      { key: 'type', label: 'Tipo' },
+      { key: 'type', label: 'Tipo', type: 'select', options: [{ label: 'Todos', value: '' }, ...organizationTypeOptions] },
       { key: 'status', label: 'Estado', type: 'select', options: ['', 'ACTIVE', 'INACTIVE'] },
     ],
     fields: [
       { key: 'name', label: 'Nombre', required: true },
       { key: 'description', label: 'Descripcion', type: 'textarea' },
-      { key: 'organization_type', label: 'Tipo' },
+      {
+        key: 'organization_type',
+        label: 'Tipo',
+        type: 'select',
+        options: [{ label: 'Seleccionar tipo...', value: '' }, ...organizationTypeOptions],
+      },
       { key: 'email', label: 'Email' },
       { key: 'phone', label: 'Telefono' },
       { key: 'province', label: 'Provincia' },

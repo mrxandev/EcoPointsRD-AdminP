@@ -1,6 +1,6 @@
 import type { FormEvent } from 'react'
 import { FiEdit3, FiUser } from 'react-icons/fi'
-import { Input, Panel, Select, StatusBadge } from '../../../components'
+import { Input, MunicipalityInput, Panel, PhoneInput, ProvinceInput, Select, StatusBadge } from '../../../components'
 import { roles, statuses } from '../../../constants'
 import { formatDominicanCedula, formatDominicanPhone } from '../../../formatters'
 import type { AdminUser, AuditLog, UserRole, UserStatus } from '../../../types'
@@ -57,9 +57,9 @@ function UserDetail(props: UserDetailProps) {
           <Input label="Apellido" placeholder="Apellido" value={String(editForm.last_name ?? '')} onChange={(value) => props.onEditFormChange({ ...editForm, last_name: value })} />
           <Input label="Email" placeholder="Email" value={String(editForm.email ?? '')} onChange={(value) => props.onEditFormChange({ ...editForm, email: value })} />
           <Input label="Cedula" inputMode="numeric" maxLength={13} placeholder="000-0000000-0" value={formatDominicanCedula(String(editForm.cedula ?? ''))} onChange={(value) => props.onEditFormChange({ ...editForm, cedula: formatDominicanCedula(value) })} />
-          <Input label="Telefono" inputMode="tel" maxLength={14} placeholder="(809)-844-3434" value={formatDominicanPhone(String(editForm.phone ?? ''))} onChange={(value) => props.onEditFormChange({ ...editForm, phone: formatDominicanPhone(value) })} />
-          <Input label="Provincia" placeholder="Provincia" value={String(editForm.province ?? '')} onChange={(value) => props.onEditFormChange({ ...editForm, province: value })} />
-          <Input label="Municipio" placeholder="Municipio" value={String(editForm.municipality ?? '')} onChange={(value) => props.onEditFormChange({ ...editForm, municipality: value })} />
+          <PhoneInput label="Telefono" value={String(editForm.phone ?? '')} onChange={(value) => props.onEditFormChange({ ...editForm, phone: value })} />
+          <ProvinceInput value={String(editForm.province ?? '')} onChange={(value) => props.onEditFormChange({ ...editForm, province: value })} />
+          <MunicipalityInput province={String(editForm.province ?? '')} value={String(editForm.municipality ?? '')} onChange={(value) => props.onEditFormChange({ ...editForm, municipality: value })} />
           <label className="flex items-center gap-2 text-sm text-on-surface"><input type="checkbox" checked={Boolean(editForm.is_verified)} onChange={(event) => props.onEditFormChange({ ...editForm, is_verified: event.target.checked })} /> Usuario verificado</label>
           <button className="button-primary w-full" disabled={savingAction === 'profile'}><FiEdit3 /> {savingAction === 'profile' ? 'Guardando perfil...' : 'Guardar perfil'}</button>
         </form>
