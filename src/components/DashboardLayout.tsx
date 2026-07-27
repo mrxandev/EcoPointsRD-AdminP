@@ -3,7 +3,6 @@ import {
   FiActivity,
   FiAward,
   FiBarChart2,
-  FiBell,
   FiCreditCard,
   FiGift,
   FiLogOut,
@@ -38,7 +37,6 @@ const navItems: Array<{ icon: ReactNode; label: string; view: AdminView }> = [
   { view: 'rewards', label: 'Recompensas', icon: <FiGift /> },
   { view: 'redemptions', label: 'Canjes', icon: <FiCreditCard /> },
   { view: 'recycling', label: 'Reciclaje', icon: <FiMapPin /> },
-  { view: 'notifications', label: 'Notificaciones', icon: <FiBell /> },
   { view: 'audit', label: 'Auditorias', icon: <FiShield /> },
 ]
 
