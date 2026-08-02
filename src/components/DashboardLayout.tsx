@@ -59,7 +59,7 @@ function DashboardLayout({
     <main className="min-h-screen bg-background text-on-background">
       {sidebarExpanded && <button className="fixed inset-0 z-20 bg-inverse-surface/25 md:hidden" onClick={onToggleSidebar} aria-label="Cerrar menu" />}
 
-      <aside className={`admin-sidebar fixed inset-y-0 left-0 z-30 flex flex-col border-r border-outline-variant bg-surface-container-lowest p-4 transition-[transform,width] duration-200 ${sidebarStateClass} ${sidebarClass}`}>
+      <aside className={`admin-sidebar overflow-visible fixed inset-y-0 left-0 z-30 flex flex-col border-r border-outline-variant bg-surface-container-lowest p-4 transition-[transform,width] duration-200 ${sidebarStateClass} ${sidebarClass}`}>
         <div className={`mb-8 flex items-center gap-3 ${sidebarExpanded ? 'justify-start' : 'md:justify-center'}`}>
           <div className={`flex items-center gap-3 ${sidebarExpanded ? '' : 'md:justify-center'}`}>
             <div className="flex h-11 w-11 items-center justify-center rounded-lg bg-primary text-on-primary">
@@ -74,7 +74,7 @@ function DashboardLayout({
           </div>
         </div>
 
-        <div className="sidebar-nav flex min-h-0 flex-1 flex-col gap-2 overflow-y-auto pr-1">
+        <div className={`sidebar-nav flex min-h-0 flex-1 flex-col gap-2 pr-1 ${sidebarExpanded ? 'overflow-y-auto' : 'overflow-visible'}`}>
           {navItems.map((item) => (
             <NavButton
               key={item.view}
@@ -87,9 +87,16 @@ function DashboardLayout({
           ))}
         </div>
 
-        <button className={`group relative mt-4 flex h-12 w-full items-center gap-3 rounded-md px-3 text-left text-sm font-semibold text-error hover:bg-error-container ${sidebarExpanded ? '' : 'justify-center'}`} onClick={onLogout} aria-label="Cerrar sesion">
+        <button
+          className={`group relative mt-4 flex h-12 w-full items-center gap-3 rounded-md px-3 text-left text-sm font-semibold text-error hover:bg-error-container ${
+            sidebarExpanded ? '' : 'justify-center'
+          }`}
+          onClick={onLogout}
+          aria-label="Cerrar sesion"
+          title="Cerrar sesion"
+        >
           <FiLogOut /> {sidebarExpanded && 'Cerrar sesion'}
-          {!sidebarExpanded && <span className="sidebar-tooltip">Cerrar sesion</span>}
+          <span className="sidebar-tooltip">Cerrar sesion</span>
         </button>
       </aside>
 
