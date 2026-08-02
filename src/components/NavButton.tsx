@@ -10,10 +10,15 @@ type NavButtonProps = {
 
 function NavButton({ active, compact = false, icon, label, onClick }: NavButtonProps) {
   return (
-    <button className={`nav-button group relative ${compact ? 'nav-button-compact' : ''} ${active ? 'nav-button-active' : ''}`} onClick={onClick} aria-label={label}>
+    <button
+      className={`nav-button group relative ${compact ? 'nav-button-compact' : ''} ${active ? 'nav-button-active' : ''}`}
+      onClick={onClick}
+      aria-label={label}
+      title={label}
+    >
       {icon}
       {!compact && <span>{label}</span>}
-      {compact && <span className="sidebar-tooltip">{label}</span>}
+      <span className="sidebar-tooltip">{label}</span>
     </button>
   )
 }
