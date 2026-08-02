@@ -14,7 +14,14 @@ type AdminListResponse =
     }
 
 export async function listAdminResource(endpoint: string, listKeys: string[], params: Record<string, string>) {
-  const cleanParams = Object.fromEntries(Object.entries(params).filter(([, value]) => value))
+  const cleanParams = Object.fromEntries(
+    Object.entries({
+      limit: '1000',
+      pageSize: '1000',
+      per_page: '1000',
+      ...params,
+    }).filter(([, value]) => value),
+  )
   const { data } = await api.get<AdminListResponse>(endpoint, { params: cleanParams })
   return readAdminList(data, listKeys)
 }

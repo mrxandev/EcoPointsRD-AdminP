@@ -19,7 +19,7 @@ import {
   FiUploadCloud,
   FiXCircle,
 } from 'react-icons/fi'
-import { Badge, Input, Loader, MapPicker, Modal, MunicipalityInput, Panel, PhoneInput, ProvinceInput, Select, TableActionButton } from '../../../components'
+import { Badge, Input, Loader, MapPicker, Modal, MunicipalityInput, Panel, PhoneInput, ProvinceInput, Select, TableActionButton, TablePagination } from '../../../components'
 import { getApiErrorMessage } from '../../../api'
 import { onlyDigits } from '../../../formatters'
 import {
@@ -354,8 +354,13 @@ function ResourceTable({
   onSelect: (record: AdminRecord) => void
   onView: (record: AdminRecord) => void
 }) {
+  const [currentPage, setCurrentPage] = useState(1)
+  const [pageSize, setPageSize] = useState(10)
+
   if (records.length === 0) return <p className="rounded-lg bg-surface-container-low p-4 text-sm text-on-surface-variant">No hay registros para mostrar.</p>
   const showActions = true
+
+  const paginatedRecords = records.slice((currentPage - 1) * pageSize, currentPage * pageSize)
 
   return (
     <div className="data-table-shell">
@@ -368,7 +373,7 @@ function ResourceTable({
           </tr>
         </thead>
         <tbody className="divide-y divide-outline-variant bg-surface-container-lowest">
-          {records.map((record, index) => (
+          {paginatedRecords.map((record, index) => (
             <tr key={String(record.id ?? index)} className="align-top">
               {columns.map((column) => (
                 <td key={column} className="max-w-[240px]">
@@ -399,14 +404,14 @@ function ResourceTable({
         </tbody>
       </table>
       </div>
-      <div className="table-footer">
-        <span>Mostrando 1-{records.length} de {records.length} registros</span>
-        <div className="pagination">
-          <button disabled>{'<'}</button>
-          <button className="active">1</button>
-          <button disabled>{'>'}</button>
-        </div>
-      </div>
+      <TablePagination
+        currentPage={currentPage}
+        itemLabel="registros"
+        onPageChange={setCurrentPage}
+        onPageSizeChange={setPageSize}
+        pageSize={pageSize}
+        totalItems={records.length}
+      />
     </div>
   )
 }
