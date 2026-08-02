@@ -1,5 +1,6 @@
+import { useState } from 'react'
 import { FiEdit2, FiEye } from 'react-icons/fi'
-import { RoleBadge, StatusBadge, TableActionButton } from '../../../components'
+import { RoleBadge, StatusBadge, TableActionButton, TablePagination } from '../../../components'
 import { formatDate } from '../utils'
 import type { AdminUser } from '../../../types'
 
@@ -10,9 +11,14 @@ type UserTableProps = {
 }
 
 function UserTable({ onAction, onSelect, users }: UserTableProps) {
+  const [currentPage, setCurrentPage] = useState(1)
+  const [pageSize, setPageSize] = useState(10)
+
   if (!users.length) {
     return <p className="table-empty">No hay usuarios para mostrar.</p>
   }
+
+  const paginatedUsers = users.slice((currentPage - 1) * pageSize, currentPage * pageSize)
 
   return (
     <div className="data-table-shell">
@@ -29,7 +35,7 @@ function UserTable({ onAction, onSelect, users }: UserTableProps) {
             </tr>
           </thead>
           <tbody>
-            {users.map((user) => (
+            {paginatedUsers.map((user) => (
               <tr key={user.id}>
                 <td>
                   <button className="user-cell" onClick={() => handleAction(user.id, 'view', onAction, onSelect)}>
@@ -55,14 +61,14 @@ function UserTable({ onAction, onSelect, users }: UserTableProps) {
           </tbody>
         </table>
       </div>
-      <div className="table-footer">
-        <span>Mostrando 1-{users.length} de {users.length} usuarios</span>
-        <div className="pagination">
-          <button disabled>{'<'}</button>
-          <button className="active">1</button>
-          <button disabled>{'>'}</button>
-        </div>
-      </div>
+      <TablePagination
+        currentPage={currentPage}
+        itemLabel="usuarios"
+        onPageChange={setCurrentPage}
+        onPageSizeChange={setPageSize}
+        pageSize={pageSize}
+        totalItems={users.length}
+      />
     </div>
   )
 }
