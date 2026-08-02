@@ -1,11 +1,11 @@
-import { FiEdit2, FiEye, FiSlash } from 'react-icons/fi'
+import { FiEdit2, FiEye } from 'react-icons/fi'
 import { RoleBadge, StatusBadge, TableActionButton } from '../../../components'
 import { formatDate } from '../utils'
 import type { AdminUser } from '../../../types'
 
 type UserTableProps = {
   users: AdminUser[]
-  onAction?: (id: string, action: 'edit' | 'status' | 'view') => void
+  onAction?: (id: string, action: 'edit' | 'view') => void
   onSelect?: (id: string) => void
 }
 
@@ -48,7 +48,6 @@ function UserTable({ onAction, onSelect, users }: UserTableProps) {
                   <div className="table-actions justify-end">
                     <TableActionButton label="Ver detalle" onClick={() => handleAction(user.id, 'view', onAction, onSelect)}><FiEye /></TableActionButton>
                     <TableActionButton label="Editar usuario" onClick={() => handleAction(user.id, 'edit', onAction, onSelect)}><FiEdit2 /></TableActionButton>
-                    <TableActionButton danger label="Rol y estado" onClick={() => handleAction(user.id, 'status', onAction, onSelect)}><FiSlash /></TableActionButton>
                   </div>
                 </td>
               </tr>
@@ -72,7 +71,7 @@ function getInitials(user: AdminUser) {
   return `${user.first_name?.[0] ?? ''}${user.last_name?.[0] ?? ''}`.toUpperCase() || 'U'
 }
 
-function handleAction(id: string, action: 'edit' | 'status' | 'view', onAction?: UserTableProps['onAction'], onSelect?: UserTableProps['onSelect']) {
+function handleAction(id: string, action: 'edit' | 'view', onAction?: UserTableProps['onAction'], onSelect?: UserTableProps['onSelect']) {
   if (onAction) {
     onAction(id, action)
     return

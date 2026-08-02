@@ -1,7 +1,7 @@
 import { useState } from 'react'
 import type { FormEvent } from 'react'
 import type { ReactNode } from 'react'
-import { FiCheckCircle, FiDownload, FiPlus, FiSearch, FiSlash, FiUserPlus } from 'react-icons/fi'
+import { FiCheckCircle, FiDownload, FiPlus, FiSearch, FiShield, FiSlash, FiUser, FiUserPlus } from 'react-icons/fi'
 import { Input, Loader, Modal, MunicipalityInput, Panel, PhoneInput, ProvinceInput, Select } from '../../../components'
 import { roles, statuses } from '../../../constants'
 import { formatDominicanCedula } from '../../../formatters'
@@ -58,7 +58,7 @@ function UsersPage(props: UsersPageProps) {
   const suspendedUsers = users.filter((user) => user.status === 'SUSPENDED').length
   const bannedUsers = users.filter((user) => user.status === 'BANNED').length
 
-  const openUserModal = async (id: string, action: 'edit' | 'status' | 'view') => {
+  const openUserModal = async (id: string, action: 'edit' | 'view') => {
     setModal(action)
     await props.onSelectUser(id)
   }
@@ -96,24 +96,47 @@ function UsersPage(props: UsersPageProps) {
       </section>
 
       <Modal title="Crear usuario" open={modal === 'create'} onClose={() => setModal(null)}>
-        <Panel title="Datos del usuario" action={<FiPlus />}>
-          <form onSubmit={props.onCreateUser} className="grid gap-3 md:grid-cols-2">
-            <Input label="Cedula" error={createErrors.cedula} inputMode="numeric" maxLength={13} placeholder="000-0000000-0" value={formatDominicanCedula(createForm.cedula)} onChange={(value) => props.onCreateFormChange({ ...createForm, cedula: formatDominicanCedula(value) })} />
-            <PhoneInput label="Telefono" value={createForm.phone} onChange={(value) => props.onCreateFormChange({ ...createForm, phone: value })} />
-            <Input label="Nombre" error={createErrors.first_name} placeholder="Nombre" value={createForm.first_name} onChange={(value) => props.onCreateFormChange({ ...createForm, first_name: value })} />
-            <Input label="Apellido" error={createErrors.last_name} placeholder="Apellido" value={createForm.last_name} onChange={(value) => props.onCreateFormChange({ ...createForm, last_name: value })} />
-            <Input label="Email" error={createErrors.email} placeholder="Email" value={createForm.email} onChange={(value) => props.onCreateFormChange({ ...createForm, email: value })} />
-            <Input label="Contraseña" error={createErrors.password} placeholder="Contraseña" type="password" value={createForm.password} onChange={(value) => props.onCreateFormChange({ ...createForm, password: value })} />
-            <Select label="Rol" value={createForm.role} onChange={(value) => props.onCreateFormChange({ ...createForm, role: value as UserRole })} options={roles} />
-            <Select label="Estado" value={createForm.status} onChange={(value) => props.onCreateFormChange({ ...createForm, status: value as UserStatus })} options={statuses} />
-            <ProvinceInput value={createForm.province} onChange={(value) => props.onCreateFormChange({ ...createForm, province: value })} />
-            <MunicipalityInput province={createForm.province} value={createForm.municipality} onChange={(value) => props.onCreateFormChange({ ...createForm, municipality: value })} />
-            <button className="button-primary md:col-span-2" disabled={savingAction === 'create'}>{savingAction === 'create' ? 'Creando usuario...' : 'Crear usuario'}</button>
-          </form>
-        </Panel>
+        <form onSubmit={props.onCreateUser} className="space-y-4">
+          <div className="grid gap-4 md:grid-cols-2">
+            {/* Bento Card 1: Datos Personales */}
+            <div className="rounded-xl border border-outline-variant bg-surface-container-low p-4 space-y-3">
+              <div className="flex items-center gap-2 text-sm font-semibold text-on-surface border-b border-outline-variant pb-2">
+                <FiUser className="text-primary" />
+                <span>Información Personal</span>
+              </div>
+              <Input label="Cedula" error={createErrors.cedula} inputMode="numeric" maxLength={13} placeholder="000-0000000-0" value={formatDominicanCedula(createForm.cedula)} onChange={(value) => props.onCreateFormChange({ ...createForm, cedula: formatDominicanCedula(value) })} />
+              <PhoneInput label="Telefono" value={createForm.phone} onChange={(value) => props.onCreateFormChange({ ...createForm, phone: value })} />
+              <div className="grid gap-3 sm:grid-cols-2">
+                <Input label="Nombre" error={createErrors.first_name} placeholder="Nombre" value={createForm.first_name} onChange={(value) => props.onCreateFormChange({ ...createForm, first_name: value })} />
+                <Input label="Apellido" error={createErrors.last_name} placeholder="Apellido" value={createForm.last_name} onChange={(value) => props.onCreateFormChange({ ...createForm, last_name: value })} />
+              </div>
+              <Input label="Email" error={createErrors.email} placeholder="Email" value={createForm.email} onChange={(value) => props.onCreateFormChange({ ...createForm, email: value })} />
+              <Input label="Contraseña" error={createErrors.password} placeholder="Contraseña" type="password" value={createForm.password} onChange={(value) => props.onCreateFormChange({ ...createForm, password: value })} />
+            </div>
+
+            {/* Bento Card 2: Rol, Estado y Ubicación */}
+            <div className="flex flex-col justify-between rounded-xl border border-outline-variant bg-surface-container-low p-4 space-y-4">
+              <div className="space-y-3">
+                <div className="flex items-center gap-2 text-sm font-semibold text-on-surface border-b border-outline-variant pb-2">
+                  <FiShield className="text-tertiary" />
+                  <span>Rol, Estado y Ubicación</span>
+                </div>
+                <div className="grid gap-3 sm:grid-cols-2">
+                  <Select label="Rol" value={createForm.role} onChange={(value) => props.onCreateFormChange({ ...createForm, role: value as UserRole })} options={roles} />
+                  <Select label="Estado" value={createForm.status} onChange={(value) => props.onCreateFormChange({ ...createForm, status: value as UserStatus })} options={statuses} />
+                </div>
+                <ProvinceInput value={createForm.province} onChange={(value) => props.onCreateFormChange({ ...createForm, province: value })} />
+                <MunicipalityInput province={createForm.province} value={createForm.municipality} onChange={(value) => props.onCreateFormChange({ ...createForm, municipality: value })} />
+              </div>
+              <button className="button-primary w-full mt-2" disabled={savingAction === 'create'}>
+                <FiPlus /> {savingAction === 'create' ? 'Creando usuario...' : 'Crear usuario'}
+              </button>
+            </div>
+          </div>
+        </form>
       </Modal>
 
-      <Modal title={modal === 'view' ? 'Detalle del usuario' : modal === 'status' ? 'Rol y estado' : 'Editar usuario'} open={modal === 'view' || modal === 'edit' || modal === 'status'} onClose={() => setModal(null)}>
+      <Modal title={modal === 'view' ? 'Detalle del usuario' : 'Editar usuario'} open={modal === 'view' || modal === 'edit'} onClose={() => setModal(null)}>
         <UserDetail
           editForm={editForm}
           mode={modal === 'view' ? 'view' : modal === 'status' ? 'status' : 'edit'}

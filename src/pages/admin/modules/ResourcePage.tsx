@@ -1,14 +1,18 @@
 import { useCallback, useEffect, useMemo, useState } from 'react'
 import type { FormEvent } from 'react'
 import {
+  FiCalendar,
   FiCheckCircle,
   FiDownload,
   FiEdit2,
   FiEye,
+  FiFileText,
+  FiMapPin,
   FiPauseCircle,
   FiPlayCircle,
   FiRefreshCw,
   FiSend,
+  FiSettings,
   FiSlash,
   FiTruck,
   FiUploadCloud,
@@ -27,6 +31,7 @@ import {
 import { getAdminUsers } from '../../../services/adminUsersService'
 import type { AdminUser } from '../../../types'
 import { formatDate, getUserName } from '../utils'
+import { translateText } from '../../../utils/translations'
 import type { ModuleConfig, ModuleField } from './moduleConfig'
 
 type ResourcePageProps = {
@@ -262,31 +267,49 @@ function ResourcePage({ config, onToast, users }: ResourcePageProps) {
       </section>
 
       <Modal title={formTitle} open={modal === 'create' || modal === 'edit'} onClose={() => setModal(null)}>
-        <Panel title="Datos del registro">
-          <form className="space-y-3" onSubmit={handleSubmit}>
-            {fields.map((field) => (
-              <ResourceFieldControl
-                key={field.key}
-                field={field}
-                formValues={form}
-                references={references}
-                users={lookupUsers}
-                value={String(form[field.key] ?? '')}
-                onChange={(value) => setForm((current) => ({ ...current, [field.key]: castFieldValue(field, value) }))}
-              />
+        <form className="space-y-4" onSubmit={handleSubmit}>
+          <div className={`grid gap-4 ${fields.length > 3 ? 'md:grid-cols-2' : 'grid-cols-1'}`}>
+            {groupFieldsIntoBentoCards(fields, config.endpoint).map((group) => (
+              <div key={group.title} className="rounded-xl border border-outline-variant bg-surface-container-low p-4 space-y-3">
+                <div className="flex items-center gap-2 text-sm font-semibold text-on-surface border-b border-outline-variant pb-2">
+                  {group.icon}
+                  <span>{group.title}</span>
+                </div>
+                <div className="space-y-3">
+                  {group.fields.map((field) => (
+                    <ResourceFieldControl
+                      key={field.key}
+                      field={field}
+                      formValues={form}
+                      references={references}
+                      users={lookupUsers}
+                      value={String(form[field.key] ?? '')}
+                      onChange={(value) => setForm((current) => ({ ...current, [field.key]: castFieldValue(field, value) }))}
+                    />
+                  ))}
+                </div>
+              </div>
             ))}
-            {isMissionModule && (
+          </div>
+
+          {isMissionModule && (
+            <div className="rounded-xl border border-outline-variant bg-surface-container-low p-4 space-y-3">
+              <div className="flex items-center gap-2 text-sm font-semibold text-on-surface border-b border-outline-variant pb-2">
+                <FiMapPin className="text-success" />
+                <span>Ubicación Geográfica en el Mapa</span>
+              </div>
               <MapPicker
                 latitude={String(form.latitude ?? '')}
                 longitude={String(form.longitude ?? '')}
                 onChange={(latitude, longitude) => setForm((current) => ({ ...current, latitude, longitude }))}
               />
-            )}
-            <button className="button-primary w-full" disabled={saving}>
-              {saving ? 'Guardando...' : selected ? 'Guardar cambios' : <><FiSend /> Enviar</>}
-            </button>
-          </form>
-        </Panel>
+            </div>
+          )}
+
+          <button className="button-primary w-full" disabled={saving}>
+            {saving ? 'Guardando...' : selected ? 'Guardar cambios' : <><FiSend /> Enviar</>}
+          </button>
+        </form>
       </Modal>
 
       <Modal title={`Detalle de ${config.title}`} open={modal === 'view'} onClose={() => setModal(null)}>
@@ -529,14 +552,122 @@ function EmptyModule() {
 function RecordDetail({ record, references, users }: { record: AdminRecord | null; references: ResourceReferences; users: AdminUser[] }) {
   if (!record) return <p className="table-empty">No hay registro seleccionado.</p>
 
+  const entries = Object.entries(record)
+  const title = String(record.title ?? record.name ?? 'Detalle del registro')
+  const status = record.status ? String(record.status) : null
+  const type = record.mission_type ?? record.organization_type ?? record.transaction_type ?? record.material_type ?? record.type ? String(record.mission_type ?? record.organization_type ?? record.transaction_type ?? record.material_type ?? record.type) : null
+
+  const mainKeys = ['title', 'name', 'description', 'points_reward', 'points_required', 'points', 'stock', 'weight_kg', 'points_awarded', 'message', 'points_spent']
+  const locationKeys = ['province', 'municipality', 'address', 'latitude', 'longitude']
+  const dateKeys = ['start_date', 'end_date', 'delivered_at', 'approved_at', 'created_at', 'updated_at']
+  const configKeys = ['requires_qr_validation', 'requires_approval', 'requires_evidence', 'is_verified', 'max_participants']
+
+  const mainEntries = entries.filter(([k]) => mainKeys.includes(k) && k !== 'title' && k !== 'name')
+  const locationEntries = entries.filter(([k]) => locationKeys.includes(k))
+  const dateEntries = entries.filter(([k]) => dateKeys.includes(k))
+  const configEntries = entries.filter(([k]) => configKeys.includes(k))
+  const otherEntries = entries.filter(([k]) => !['id', 'title', 'name', 'status', ...mainKeys, ...locationKeys, ...dateKeys, ...configKeys].includes(k))
+
   return (
-    <div className="detail-grid">
-      {Object.entries(record).map(([key, value]) => (
-        <div className="detail-item" key={key}>
-          <span>{formatColumn(key)}</span>
-          <strong>{formatDetailValue(key, value, references, users)}</strong>
+    <div className="space-y-4">
+      {/* Header Bento Box */}
+      <div className="rounded-xl border border-outline-variant bg-surface-container-low p-4 flex flex-wrap items-center justify-between gap-3">
+        <div>
+          <h3 className="text-lg font-bold text-on-surface">{title}</h3>
+          <p className="text-xs text-on-surface-variant font-mono mt-0.5">ID: {String(record.id ?? '-')}</p>
         </div>
-      ))}
+        <div className="flex flex-wrap items-center gap-2">
+          {type && <Badge label={type} tone="info" />}
+          {status && <Badge label={status} tone={badgeTone(status)} />}
+        </div>
+      </div>
+
+      {/* Bento Grid */}
+      <div className="grid gap-4 md:grid-cols-2">
+        {/* Card 1: Información General */}
+        {mainEntries.length > 0 && (
+          <div className="rounded-xl border border-outline-variant bg-surface-container-low p-4 space-y-3">
+            <div className="flex items-center gap-2 text-sm font-semibold text-on-surface border-b border-outline-variant pb-2">
+              <FiFileText className="text-primary" />
+              <span>Información General</span>
+            </div>
+            <div className="grid gap-3">
+              {mainEntries.map(([key, value]) => (
+                <DetailRow key={key} label={formatColumn(key)} value={formatDetailValue(key, value, references, users)} />
+              ))}
+            </div>
+          </div>
+        )}
+
+        {/* Card 2: Configuración y Reglas */}
+        {configEntries.length > 0 && (
+          <div className="rounded-xl border border-outline-variant bg-surface-container-low p-4 space-y-3">
+            <div className="flex items-center gap-2 text-sm font-semibold text-on-surface border-b border-outline-variant pb-2">
+              <FiSettings className="text-warning" />
+              <span>Configuración y Reglas</span>
+            </div>
+            <div className="grid gap-3">
+              {configEntries.map(([key, value]) => (
+                <DetailRow key={key} label={formatColumn(key)} value={formatDetailValue(key, value, references, users)} />
+              ))}
+            </div>
+          </div>
+        )}
+
+        {/* Card 3: Ubicación */}
+        {locationEntries.length > 0 && (
+          <div className="rounded-xl border border-outline-variant bg-surface-container-low p-4 space-y-3">
+            <div className="flex items-center gap-2 text-sm font-semibold text-on-surface border-b border-outline-variant pb-2">
+              <FiMapPin className="text-success" />
+              <span>Ubicación</span>
+            </div>
+            <div className="grid gap-3">
+              {locationEntries.map(([key, value]) => (
+                <DetailRow key={key} label={formatColumn(key)} value={formatDetailValue(key, value, references, users)} />
+              ))}
+            </div>
+          </div>
+        )}
+
+        {/* Card 4: Fechas y Tiempos */}
+        {dateEntries.length > 0 && (
+          <div className="rounded-xl border border-outline-variant bg-surface-container-low p-4 space-y-3">
+            <div className="flex items-center gap-2 text-sm font-semibold text-on-surface border-b border-outline-variant pb-2">
+              <FiCalendar className="text-tertiary" />
+              <span>Fechas y Tiempos</span>
+            </div>
+            <div className="grid gap-3">
+              {dateEntries.map(([key, value]) => (
+                <DetailRow key={key} label={formatColumn(key)} value={formatDetailValue(key, value, references, users)} />
+              ))}
+            </div>
+          </div>
+        )}
+
+        {/* Card 5: Otros Detalles */}
+        {otherEntries.length > 0 && (
+          <div className="rounded-xl border border-outline-variant bg-surface-container-low p-4 space-y-3 md:col-span-2">
+            <div className="flex items-center gap-2 text-sm font-semibold text-on-surface border-b border-outline-variant pb-2">
+              <FiFileText className="text-on-surface-variant" />
+              <span>Detalles Adicionales</span>
+            </div>
+            <div className="grid gap-3 sm:grid-cols-2">
+              {otherEntries.map(([key, value]) => (
+                <DetailRow key={key} label={formatColumn(key)} value={formatDetailValue(key, value, references, users)} />
+              ))}
+            </div>
+          </div>
+        )}
+      </div>
+    </div>
+  )
+}
+
+function DetailRow({ label, value }: { label: string; value: React.ReactNode }) {
+  return (
+    <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-1 text-sm">
+      <span className="text-on-surface-variant font-medium">{label}</span>
+      <span className="font-semibold text-on-surface break-words">{value}</span>
     </div>
   )
 }
@@ -574,12 +705,14 @@ function resolveCreateEndpoint(config: ModuleConfig, form: Record<string, unknow
 
 function renderValue(column: string, value: unknown, references: ResourceReferences, users: AdminUser[]) {
   if (column === 'created_at' || column.endsWith('_at')) return <span className="text-on-surface-variant">{formatDate(String(value ?? ''))}</span>
-  if (column === 'status' && value) return <Badge label={String(value)} tone={badgeTone(String(value))} />
+  if ((column === 'status' || column.endsWith('_status') || column.endsWith('_type') || column === 'role') && value) {
+    return <Badge label={String(value)} tone={badgeTone(String(value))} />
+  }
   if (typeof value === 'boolean') return value ? 'Si' : 'No'
   if (value === null || value === undefined || value === '') return <span className="text-on-surface-variant">-</span>
   const label = resolveReferenceLabel(column, value, references, users)
   if (label) return <span className="break-words">{label}</span>
-  return <span className="break-words">{String(value)}</span>
+  return <span className="break-words">{translateText(String(value))}</span>
 }
 
 function badgeTone(value: string) {
@@ -600,21 +733,79 @@ function getActionIcon(action: string) {
 }
 
 function formatColumn(column: string) {
-  if (column === 'user_id') return 'Usuario'
-  if (column === 'organization_id') return 'Organizacion'
-  if (column === 'sponsor_id') return 'Patrocinador'
-  if (column === 'center_id') return 'Centro'
-  if (column === 'mission_id') return 'Mision'
-  if (column === 'reward_id') return 'Recompensa'
+  const columnMap: Record<string, string> = {
+    id: 'ID',
+    title: 'Título',
+    name: 'Nombre',
+    description: 'Descripción',
+    status: 'Estado',
+    type: 'Tipo',
+    mission_type: 'Tipo de Misión',
+    organization_type: 'Tipo de Organización',
+    points: 'Puntos',
+    points_reward: 'Puntos de Recompensa',
+    points_required: 'Puntos Requeridos',
+    points_spent: 'Puntos Gastados',
+    start_date: 'Fecha de Inicio',
+    end_date: 'Fecha de Fin',
+    province: 'Provincia',
+    municipality: 'Municipio',
+    address: 'Dirección',
+    latitude: 'Latitud',
+    longitude: 'Longitud',
+    max_participants: 'Máx. Participantes',
+    requires_evidence: 'Requiere Evidencia',
+    requires_qr_validation: 'Requiere QR',
+    requires_approval: 'Requiere Aprobación',
+    organization_id: 'Organización',
+    sponsor_id: 'Patrocinador',
+    center_id: 'Centro',
+    mission_id: 'Misión',
+    reward_id: 'Recompensa',
+    user_id: 'Usuario',
+    actor_id: 'Actor',
+    target_user_id: 'Usuario Afectado',
+    material_type: 'Tipo de Material',
+    weight_kg: 'Peso (KG)',
+    points_awarded: 'Puntos Otorgados',
+    stock: 'Stock',
+    created_by: 'Creado por',
+    created_at: 'Fecha de Creación',
+    updated_at: 'Última Actualización',
+    delivered_at: 'Fecha de Entrega',
+    approved_at: 'Fecha de Aprobación',
+  }
+
+  if (columnMap[column]) return columnMap[column]
   return column.replaceAll('_', ' ')
 }
 
-function formatDetailValue(key: string, value: unknown, references: ResourceReferences, users: AdminUser[]) {
+function formatDetailValue(key: string, value: unknown, references: ResourceReferences, users: AdminUser[]): React.ReactNode {
   if (value === null || value === undefined || value === '') return '-'
+
+  if (typeof value === 'boolean' || value === 'true' || value === 'false') {
+    const isTrue = value === true || value === 'true'
+    return (
+      <span className={`inline-flex items-center rounded-full px-2.5 py-0.5 text-xs font-semibold ${isTrue ? 'bg-success/20 text-primary' : 'bg-surface-container-high text-on-surface-variant'}`}>
+        {isTrue ? 'Sí' : 'No'}
+      </span>
+    )
+  }
+
+  if (key === 'created_at' || key.endsWith('_at') || key.endsWith('_date')) {
+    return formatDate(String(value))
+  }
+
+  if (key === 'status' || key.endsWith('_status') || key.endsWith('_type') || key === 'role') {
+    return <Badge label={String(value)} tone={badgeTone(String(value))} />
+  }
+
   const label = resolveReferenceLabel(key, value, references, users)
   if (label) return label
+
   if (typeof value === 'object') return JSON.stringify(value)
-  return String(value)
+
+  return translateText(String(value))
 }
 
 function buildDisplayFilterFields(fields: ModuleField[]) {
@@ -764,6 +955,56 @@ function normalizeText(value: string) {
     .replace(/[\u0300-\u036f]/g, '')
     .toLowerCase()
     .trim()
+}
+
+type BentoGroup = {
+  title: string
+  icon: React.ReactNode
+  fields: ModuleField[]
+}
+
+function groupFieldsIntoBentoCards(fields: ModuleField[], endpoint?: string): BentoGroup[] {
+  if (endpoint?.includes('missions')) {
+    const mainKeys = ['title', 'description', 'mission_type', 'points_reward']
+    const dateKeys = ['start_date', 'end_date', 'max_participants']
+    const locationKeys = ['province', 'municipality', 'address', 'latitude', 'longitude']
+    const configKeys = ['requires_qr_validation', 'requires_approval', 'organization_id']
+
+    return [
+      { title: 'Información de la Misión', icon: <FiFileText className="text-primary" />, fields: fields.filter((f) => mainKeys.includes(f.key)) },
+      { title: 'Fechas y Capacidad', icon: <FiCalendar className="text-tertiary" />, fields: fields.filter((f) => dateKeys.includes(f.key)) },
+      { title: 'Ubicación Geográfica', icon: <FiMapPin className="text-success" />, fields: fields.filter((f) => locationKeys.includes(f.key)) },
+      { title: 'Reglas y Validación', icon: <FiSettings className="text-warning" />, fields: fields.filter((f) => configKeys.includes(f.key)) },
+    ].filter((g) => g.fields.length > 0)
+  }
+
+  if (endpoint?.includes('organizations')) {
+    const orgKeys = ['name', 'description', 'organization_type', 'logo_url']
+    return [
+      { title: 'Datos de la Organización', icon: <FiFileText className="text-primary" />, fields: fields.filter((f) => orgKeys.includes(f.key)) },
+      { title: 'Contacto y Ubicación', icon: <FiMapPin className="text-success" />, fields: fields.filter((f) => !orgKeys.includes(f.key)) },
+    ].filter((g) => g.fields.length > 0)
+  }
+
+  if (endpoint?.includes('rewards')) {
+    const rewardKeys = ['title', 'description', 'image_url']
+    return [
+      { title: 'Detalles de Recompensa', icon: <FiFileText className="text-primary" />, fields: fields.filter((f) => rewardKeys.includes(f.key)) },
+      { title: 'Canje y Stock', icon: <FiSettings className="text-tertiary" />, fields: fields.filter((f) => !rewardKeys.includes(f.key)) },
+    ].filter((g) => g.fields.length > 0)
+  }
+
+  if (fields.length > 3) {
+    const half = Math.ceil(fields.length / 2)
+    return [
+      { title: 'Datos Principales', icon: <FiFileText className="text-primary" />, fields: fields.slice(0, half) },
+      { title: 'Detalles Adicionales', icon: <FiSettings className="text-tertiary" />, fields: fields.slice(half) },
+    ]
+  }
+
+  return [
+    { title: 'Detalles del Registro', icon: <FiFileText className="text-primary" />, fields },
+  ]
 }
 
 export default ResourcePage
