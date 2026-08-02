@@ -26,7 +26,7 @@ const entityOptions = ['', 'users']
 function AuditPage({ audits, filters, loading, users, onFiltersChange, onLoadAudits }: AuditPageProps) {
   return (
     <div className="space-y-6 min-w-0">
-      <Panel title="Logs generales" action={<button className="button-secondary w-full sm:w-auto" onClick={onLoadAudits}><FiRefreshCw /> Actualizar</button>}>
+      <Panel title="Logs generales" action={<button className="icon-tab" onClick={onLoadAudits} title="Actualizar auditorias" aria-label="Actualizar auditorias"><FiRefreshCw /></button>}>
         <div className="mb-4 grid items-end gap-3 md:grid-cols-4">
           <Select label="Accion" value={filters.action} onChange={(value) => onFiltersChange({ ...filters, action: value })} options={actionOptions} />
           <Select label="Entidad" value={filters.entityType} onChange={(value) => onFiltersChange({ ...filters, entityType: value })} options={entityOptions} />

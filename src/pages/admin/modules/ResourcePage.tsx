@@ -4,7 +4,6 @@ import {
   FiAlertCircle,
   FiCalendar,
   FiCheckCircle,
-  FiDownload,
   FiEdit2,
   FiEye,
   FiFileText,
@@ -226,12 +225,11 @@ function ResourcePage({ config, onToast, users }: ResourcePageProps) {
           </div>
           <div className="flex flex-wrap gap-2">
             {config.canCreate && <button className="button-primary" onClick={() => { setSelected(null); setForm(emptyForm); setModal('create') }}>Crear</button>}
-            {hasList && <button className="button-secondary" onClick={loadRecords}><FiRefreshCw /> Actualizar</button>}
           </div>
         </div>
 
         {filterFields.length > 0 && (
-          <Panel title="Busqueda rapida" action={<button className="icon-tab" onClick={loadRecords} aria-label={`Actualizar ${config.title}`}><FiDownload /></button>}>
+          <Panel title="Busqueda rapida" action={<button className="icon-tab" onClick={loadRecords} title={`Actualizar ${config.title}`} aria-label={`Actualizar ${config.title}`}><FiRefreshCw /></button>}>
             <div className="grid items-end gap-3 md:grid-cols-3">
               {displayFilterFields.map((field) => (
                 <FieldControl

@@ -1,7 +1,7 @@
 import { useState } from 'react'
 import type { FormEvent } from 'react'
 import type { ReactNode } from 'react'
-import { FiCheckCircle, FiDownload, FiPlus, FiSearch, FiShield, FiSlash, FiUser, FiUserPlus } from 'react-icons/fi'
+import { FiCheckCircle, FiPlus, FiRefreshCw, FiSearch, FiShield, FiSlash, FiUser, FiUserPlus } from 'react-icons/fi'
 import { Input, Loader, Modal, MunicipalityInput, Panel, PhoneInput, ProvinceInput, Select } from '../../../components'
 import { roles, statuses } from '../../../constants'
 import { formatDominicanCedula } from '../../../formatters'
@@ -76,13 +76,12 @@ function UsersPage(props: UsersPageProps) {
         </div>
 
         <div className="metric-strip">
-          <MiniUserMetric icon={<FiUserPlus />} label="Nuevos hoy" value={`+${Math.min(users.length, 24)}`} tone="success" />
           <MiniUserMetric icon={<FiCheckCircle />} label="Activos" value={activeUsers} tone="success" />
           <MiniUserMetric icon={<FiSlash />} label="Suspendidos" value={suspendedUsers} tone="warning" />
           <MiniUserMetric icon={<FiSlash />} label="Baneados" value={bannedUsers} tone="danger" />
         </div>
 
-        <Panel title="Busqueda rapida" action={<button className="icon-tab" onClick={props.onLoadUsers} aria-label="Actualizar usuarios"><FiDownload /></button>}>
+        <Panel title="Busqueda rapida" action={<button className="icon-tab" onClick={props.onLoadUsers} title="Actualizar usuarios" aria-label="Actualizar usuarios"><FiRefreshCw /></button>}>
           <div className="grid items-end gap-3 md:grid-cols-[1fr_180px_180px]">
             <Input label="Nombre, email o cedula" leftIcon={<FiSearch />} placeholder="Buscar usuario..." value={filters.search} onChange={(value) => props.onFiltersChange({ ...filters, search: value })} />
             <Select label="Rol de usuario" value={filters.role} onChange={(value) => props.onFiltersChange({ ...filters, role: value })} options={['', ...roles]} />
