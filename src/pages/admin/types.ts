@@ -46,7 +46,7 @@ export type UserFilters = {
 }
 
 export type RoleChange = {
-  role: 'USER' | 'AGENT' | 'AUDITOR' | 'ADMIN'
+  role: 'USER' | 'AGENT' | 'ADMIN'
   reason: string
 }
 

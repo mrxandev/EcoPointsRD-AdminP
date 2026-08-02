@@ -1,4 +1,5 @@
 import type { UserRole, UserStatus } from '../types'
+import { translateText } from '../utils/translations'
 
 type BadgeTone = 'default' | 'success' | 'warning' | 'danger' | 'info'
 
@@ -11,7 +12,7 @@ function Badge({ label, tone = 'default' }: { label: string; tone?: BadgeTone })
     info: 'bg-tertiary/10 text-tertiary',
   }
 
-  return <span className={`inline-flex max-w-full items-center rounded-full px-3 py-1 text-xs font-semibold ${tones[tone]}`}>{label}</span>
+  return <span className={`inline-flex max-w-full items-center rounded-full px-3 py-1 text-xs font-semibold ${tones[tone]}`}>{translateText(label)}</span>
 }
 
 export function StatusBadge({ status }: { status: UserStatus }) {
@@ -28,7 +29,6 @@ export function RoleBadge({ role }: { role: UserRole }) {
   const toneByRole: Record<UserRole, BadgeTone> = {
     USER: 'default',
     AGENT: 'success',
-    AUDITOR: 'warning',
     ADMIN: 'info',
   }
 
@@ -36,3 +36,4 @@ export function RoleBadge({ role }: { role: UserRole }) {
 }
 
 export default Badge
+
