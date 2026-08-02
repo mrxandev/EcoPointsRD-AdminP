@@ -42,12 +42,10 @@ function Dashboard({ admin, onLogout }: DashboardProps) {
     onToast: pushToast,
   })
   const audits = useAdminAudits(users.users, handleError)
-  const { loadAudits } = audits
 
   useEffect(() => {
     void loadDashboard()
-    void loadAudits()
-  }, [loadAudits, loadDashboard])
+  }, [loadDashboard])
 
   return (
     <DashboardLayout

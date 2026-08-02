@@ -1,6 +1,7 @@
 import { useCallback, useEffect, useMemo, useState } from 'react'
 import type { FormEvent } from 'react'
 import {
+  FiAlertCircle,
   FiCalendar,
   FiCheckCircle,
   FiDownload,
@@ -68,6 +69,7 @@ function ResourcePage({ config, onToast, users }: ResourcePageProps) {
 
   const hasList = config.columns.length > 0
   const isMissionModule = config.endpoint === '/api/admin/missions'
+  const isPointsModule = config.endpoint === '/api/admin/points/transactions' || config.title === 'Puntos'
   const formTitle = selected && config.canUpdate ? `Editar ${config.title}` : config.createTitle ?? `Crear ${config.title}`
   const displayFilterFields = useMemo(() => buildDisplayFilterFields(filterFields), [filterFields])
   const lookupUsers = referenceUsers.length ? referenceUsers : users
@@ -268,29 +270,39 @@ function ResourcePage({ config, onToast, users }: ResourcePageProps) {
 
       <Modal title={formTitle} open={modal === 'create' || modal === 'edit'} onClose={() => setModal(null)}>
         <form className="space-y-4" onSubmit={handleSubmit}>
-          <div className={`grid gap-4 ${fields.length > 3 ? 'md:grid-cols-2' : 'grid-cols-1'}`}>
-            {groupFieldsIntoBentoCards(fields, config.endpoint).map((group) => (
-              <div key={group.title} className="rounded-xl border border-outline-variant bg-surface-container-low p-4 space-y-3">
-                <div className="flex items-center gap-2 text-sm font-semibold text-on-surface border-b border-outline-variant pb-2">
-                  {group.icon}
-                  <span>{group.title}</span>
+          {isPointsModule ? (
+            <PointsAdjustmentForm
+              fields={fields}
+              form={form}
+              references={references}
+              users={lookupUsers}
+              onChange={(key, value) => setForm((current) => ({ ...current, [key]: value }))}
+            />
+          ) : (
+            <div className={`grid gap-4 ${fields.length > 3 ? 'md:grid-cols-2' : 'grid-cols-1'}`}>
+              {groupFieldsIntoBentoCards(fields, config.endpoint).map((group) => (
+                <div key={group.title} className="rounded-xl border border-outline-variant bg-surface-container-low p-4 space-y-3">
+                  <div className="flex items-center gap-2 text-sm font-semibold text-on-surface border-b border-outline-variant pb-2">
+                    {group.icon}
+                    <span>{group.title}</span>
+                  </div>
+                  <div className="space-y-3">
+                    {group.fields.map((field) => (
+                      <ResourceFieldControl
+                        key={field.key}
+                        field={field}
+                        formValues={form}
+                        references={references}
+                        users={lookupUsers}
+                        value={String(form[field.key] ?? '')}
+                        onChange={(value) => setForm((current) => ({ ...current, [field.key]: castFieldValue(field, value) }))}
+                      />
+                    ))}
+                  </div>
                 </div>
-                <div className="space-y-3">
-                  {group.fields.map((field) => (
-                    <ResourceFieldControl
-                      key={field.key}
-                      field={field}
-                      formValues={form}
-                      references={references}
-                      users={lookupUsers}
-                      value={String(form[field.key] ?? '')}
-                      onChange={(value) => setForm((current) => ({ ...current, [field.key]: castFieldValue(field, value) }))}
-                    />
-                  ))}
-                </div>
-              </div>
-            ))}
-          </div>
+              ))}
+            </div>
+          )}
 
           {isMissionModule && (
             <div className="rounded-xl border border-outline-variant bg-surface-container-low p-4 space-y-3">
@@ -487,39 +499,54 @@ function FieldControl({
 }
 
 function ChoiceControl({ field, onChange, value }: { field: ModuleField; onChange: (value: string) => void; value: string }) {
-  const [manualEntry, setManualEntry] = useState(false)
   const options = field.options ?? []
   const normalizedOptions = options.map((option) => (typeof option === 'string' ? { label: option, value: option } : option))
-  const optionValues = normalizedOptions.map((option) => option.value)
-  const isOtherValue = field.allowOther && value && !optionValues.includes(value)
-  const showManualInput = Boolean(field.allowOther && (manualEntry || isOtherValue))
-  const activeValue = showManualInput ? 'Otro' : value
+  const presetValues = normalizedOptions.filter((opt) => !isOtherChoice(opt.value, opt.label)).map((opt) => opt.value)
+
+  const [customMode, setCustomMode] = useState(() => {
+    return Boolean(field.allowOther && value && !presetValues.includes(value))
+  })
+
+  const showManualInput = Boolean(field.allowOther && customMode)
+
+  const handleChipClick = (optionValue: string, optionLabel: string) => {
+    const isOther = isOtherChoice(optionValue, optionLabel)
+    setCustomMode(isOther)
+    if (isOther) {
+      if (presetValues.includes(value)) {
+        onChange('')
+      }
+    } else {
+      onChange(optionValue)
+    }
+  }
 
   return (
     <div className="choice-field">
       <span>{field.label}</span>
       <div className="choice-grid">
-        {normalizedOptions.map((option) => (
-          <button
-            key={option.value}
-            className={`choice-chip ${activeValue === option.value ? 'choice-chip-active' : ''}`}
-            type="button"
-            onClick={() => {
-              const isOtherOption = isOtherChoice(option.value, option.label)
-              setManualEntry(isOtherOption)
-              onChange(isOtherOption ? '' : option.value)
-            }}
-          >
-            {option.label}
-          </button>
-        ))}
+        {normalizedOptions.map((option) => {
+          const isOther = isOtherChoice(option.value, option.label)
+          const isActive = isOther ? customMode : (!customMode && value === option.value)
+
+          return (
+            <button
+              key={option.value}
+              className={`choice-chip ${isActive ? 'choice-chip-active' : ''}`}
+              type="button"
+              onClick={() => handleChipClick(option.value, option.label)}
+            >
+              {option.label}
+            </button>
+          )
+        })}
       </div>
       {showManualInput && (
         <Input
           label={`${field.label} personalizado`}
-          placeholder={`${field.label} personalizado`}
-          type={field.key === 'points_reward' ? 'number' : 'text'}
-          value={isOtherValue ? value : ''}
+          placeholder={`${field.label} personalizado (ej: 123415)`}
+          type={field.key === 'points' || field.key === 'points_reward' || field.key === 'max_participants' ? 'number' : 'text'}
+          value={value}
           onChange={onChange}
         />
       )}
@@ -716,9 +743,11 @@ function renderValue(column: string, value: unknown, references: ResourceReferen
 }
 
 function badgeTone(value: string) {
-  if (['ACTIVE', 'APPROVED', 'DELIVERED', 'COMPLETED', 'PUBLISHED'].includes(value)) return 'success'
-  if (['PENDING', 'IN_PROGRESS', 'SUSPENDED'].includes(value)) return 'warning'
-  if (['BANNED', 'REJECTED', 'CANCELLED', 'INACTIVE'].includes(value)) return 'danger'
+  const upper = String(value).toUpperCase()
+  if (['ACTIVE', 'APPROVED', 'DELIVERED', 'COMPLETED', 'PUBLISHED', 'BONUS', 'EARNED'].includes(upper)) return 'success'
+  if (['PENDING', 'IN_PROGRESS', 'SUSPENDED'].includes(upper)) return 'warning'
+  if (['BANNED', 'REJECTED', 'CANCELLED', 'INACTIVE', 'PENALTY', 'PENALIZATION', 'PENALIZACIÓN', 'PENALIZACION'].includes(upper) || upper.includes('PENAL')) return 'danger'
+  if (['REDEEMED'].includes(upper)) return 'info'
   return 'default'
 }
 
@@ -1005,6 +1034,188 @@ function groupFieldsIntoBentoCards(fields: ModuleField[], endpoint?: string): Be
   return [
     { title: 'Detalles del Registro', icon: <FiFileText className="text-primary" />, fields },
   ]
+}
+
+function PointsAdjustmentForm({
+  fields,
+  form,
+  references,
+  users,
+  onChange,
+}: {
+  fields: ModuleField[]
+  form: Record<string, unknown>
+  references: ResourceReferences
+  users: AdminUser[]
+  onChange: (key: string, value: unknown) => void
+}) {
+  const transactionType = String(form.transaction_type ?? 'BONUS')
+  const isBonus = transactionType === 'BONUS'
+  const isPenalty = transactionType === 'PENALTY' || transactionType === 'PENALIZATION'
+
+  const currentPoints = Number(form.points) || 10
+  const presetValues = [10, 25, 50, 100, 500]
+
+  const [isCustom, setIsCustom] = useState(() => !presetValues.includes(currentPoints))
+
+  const prefix = isPenalty ? '-' : '+'
+
+  const handleSelectPreset = (val: number) => {
+    setIsCustom(false)
+    onChange('points', val)
+  }
+
+  const handleSelectCustom = () => {
+    setIsCustom(true)
+    if (!form.points || Number(form.points) <= 0) {
+      onChange('points', 10)
+    }
+  }
+
+  const handlePointsInputChange = (val: string) => {
+    const rawDigits = onlyDigits(val)
+    const num = rawDigits ? parseInt(rawDigits, 10) : ''
+    onChange('points', num)
+  }
+
+  useEffect(() => {
+    if (!form.transaction_type) {
+      onChange('transaction_type', 'BONUS')
+    }
+    if (!form.points) {
+      onChange('points', 10)
+    }
+  }, [])
+
+  return (
+    <div className="space-y-4">
+      {/* Banner Informativo explicativo */}
+      <div
+        className={`flex items-start gap-3 rounded-xl border p-3.5 text-sm transition-all ${
+          isBonus
+            ? 'border-success/30 bg-success/10 text-primary'
+            : 'border-error/30 bg-error/10 text-error'
+        }`}
+      >
+        <FiAlertCircle className="mt-0.5 shrink-0 text-lg" />
+        <div className="space-y-0.5">
+          <p className="font-bold">
+            {isBonus ? 'Modo de Ajuste: Bono de Puntos (+)' : 'Modo de Ajuste: Penalización de Puntos (-)'}
+          </p>
+          <p className="text-xs opacity-90 leading-relaxed">
+            {isBonus
+              ? 'El tipo seleccionado es de BONO. La cantidad indicada se SUMARÁ automáticamente a la cuenta del usuario.'
+              : 'El tipo seleccionado es de PENALIZACIÓN. La cantidad indicada se RESTARÁ automáticamente de la cuenta del usuario.'}
+          </p>
+        </div>
+      </div>
+
+      <div className="grid gap-4 md:grid-cols-2">
+        {/* Bento Card 1: Selección de Usuario y Puntos */}
+        <div className="rounded-xl border border-outline-variant bg-surface-container-low p-4 space-y-4">
+          <div className="flex items-center gap-2 text-sm font-semibold text-on-surface border-b border-outline-variant pb-2">
+            <FiFileText className="text-primary" />
+            <span>Datos del Usuario y Puntos</span>
+          </div>
+
+          {/* Selector de Usuario */}
+          {fields.find((f) => f.key === 'user_id') && (
+            <ResourceFieldControl
+              field={fields.find((f) => f.key === 'user_id')!}
+              formValues={form}
+              references={references}
+              users={users}
+              value={String(form.user_id ?? '')}
+              onChange={(val) => onChange('user_id', val)}
+            />
+          )}
+
+          {/* Badges de selección de puntos */}
+          <div className="space-y-2.5">
+            <label className="text-xs font-bold text-on-surface-variant uppercase tracking-wider block">
+              Cantidad de Puntos
+            </label>
+            <div className="flex flex-wrap gap-2">
+              {presetValues.map((val) => {
+                const isSelected = !isCustom && currentPoints === val
+                return (
+                  <button
+                    key={val}
+                    type="button"
+                    onClick={() => handleSelectPreset(val)}
+                    className={`rounded-full px-3.5 py-1.5 text-xs font-bold transition-all border ${
+                      isSelected
+                        ? isBonus
+                          ? 'bg-primary text-on-primary border-primary shadow-sm scale-105'
+                          : 'bg-error text-on-error border-error shadow-sm scale-105'
+                        : isBonus
+                        ? 'border-success/30 bg-success/15 text-primary hover:bg-success/25'
+                        : 'border-error/30 bg-error/15 text-error hover:bg-error/25'
+                    }`}
+                  >
+                    {prefix}{val} pts
+                  </button>
+                )
+              })}
+              <button
+                type="button"
+                onClick={handleSelectCustom}
+                className={`rounded-full px-3.5 py-1.5 text-xs font-bold transition-all border ${
+                  isCustom
+                    ? isBonus
+                      ? 'bg-primary text-on-primary border-primary shadow-sm scale-105'
+                      : 'bg-error text-on-error border-error shadow-sm scale-105'
+                    : 'border-outline-variant bg-surface-container text-on-surface-variant hover:bg-surface-container-high'
+                }`}
+              >
+                Personalizado
+              </button>
+            </div>
+
+            {/* Input de cantidad personalizada */}
+            {isCustom && (
+              <div className="pt-2">
+                <Input
+                  label="Cantidad personalizada (puntos)"
+                  placeholder="Ej: 150"
+                  inputMode="numeric"
+                  value={String(currentPoints || '')}
+                  onChange={handlePointsInputChange}
+                />
+              </div>
+            )}
+          </div>
+        </div>
+
+        {/* Bento Card 2: Tipo y Descripción */}
+        <div className="rounded-xl border border-outline-variant bg-surface-container-low p-4 space-y-4">
+          <div className="flex items-center gap-2 text-sm font-semibold text-on-surface border-b border-outline-variant pb-2">
+            <FiSettings className="text-secondary" />
+            <span>Configuración del Ajuste</span>
+          </div>
+
+          <Select
+            label="Tipo de Ajuste"
+            value={transactionType}
+            options={[
+              { label: 'Bono (+ Puntos)', value: 'BONUS' },
+              { label: 'Penalización (- Puntos)', value: 'PENALTY' },
+            ]}
+            onChange={(val) => onChange('transaction_type', val)}
+          />
+
+          {fields.find((f) => f.key === 'description') && (
+            <Input
+              label="Descripción o motivo del ajuste"
+              placeholder="Ej: Bono por excelente conducta ambiental"
+              value={String(form.description ?? '')}
+              onChange={(val) => onChange('description', val)}
+            />
+          )}
+        </div>
+      </div>
+    </div>
+  )
 }
 
 export default ResourcePage
