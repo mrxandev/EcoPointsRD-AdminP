@@ -9,6 +9,9 @@ export async function getAdminUsers(filters: UserFilters) {
   const shouldFilterFullNameLocally = search.includes(' ')
   const params = Object.fromEntries(
     Object.entries({
+      limit: '1000',
+      pageSize: '1000',
+      per_page: '1000',
       ...filters,
       search: shouldFilterFullNameLocally ? '' : search,
     }).filter(([, value]) => value),
