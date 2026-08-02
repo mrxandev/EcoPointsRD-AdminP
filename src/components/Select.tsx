@@ -1,4 +1,5 @@
 import { useId } from 'react'
+import { translateText } from '../utils/translations'
 
 export type SelectOption = string | {
   label: string
@@ -38,8 +39,13 @@ function Select({ error, label, value, onChange, options }: SelectProps) {
 }
 
 function normalizeOption(option: SelectOption) {
-  if (typeof option === 'string') return { label: option, value: option }
-  return option
+  if (typeof option === 'string') {
+    return { label: translateText(option), value: option }
+  }
+  return {
+    label: translateText(option.label),
+    value: option.value,
+  }
 }
 
 export default Select

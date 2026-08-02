@@ -1,5 +1,6 @@
 import { FiAward, FiCheckCircle, FiClock, FiGift, FiTarget, FiTrendingUp, FiUsers } from 'react-icons/fi'
 import { Panel, StatCard } from '../../../components'
+import { translateText } from '../../../utils/translations'
 import type { DashboardLabelCount, DashboardMissionItem, DashboardRewardItem, DashboardStats, DashboardTopUser } from '../../../types'
 
 type DashboardHomeProps = {
@@ -153,7 +154,7 @@ function EmptyState({ text }: { text: string }) {
 }
 
 function formatLabel(value: string) {
-  return value.replaceAll('_', ' ').toLowerCase()
+  return translateText(value)
 }
 
 function formatNumber(value: number) {
