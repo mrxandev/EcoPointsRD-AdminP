@@ -3,12 +3,14 @@ import { FiArrowUpRight, FiAward, FiCheckCircle, FiClock, FiGift, FiTarget, FiUs
 import { Panel, StatCard } from '../../../components'
 import { translateText } from '../../../utils/translations'
 import type { DashboardRewardItem, DashboardStats, DashboardTopUser } from '../../../types'
+import type { AdminView } from '../types'
 
 type DashboardHomeProps = {
   stats: DashboardStats
+  onViewChange?: (view: AdminView) => void
 }
 
-function DashboardHome({ stats }: DashboardHomeProps) {
+function DashboardHome({ stats, onViewChange }: DashboardHomeProps) {
   const { missions, points, rewards, summary } = stats
 
   const cards = [
@@ -35,10 +37,10 @@ function DashboardHome({ stats }: DashboardHomeProps) {
         <PointsEconomyCard redeemedPoints={points.totals.redeemed} totalPoints={summary.total_points_generated} />
       </section>
 
-      {/* Fila 3: Distribución de Usuarios & Usuarios Más Activos */}
+      {/* Fila 3: Distribución de Usuarios & Usuarios Más Activos / Podio */}
       <section className="grid min-w-0 gap-6 xl:grid-cols-2">
         <UserDistributionCard byRole={stats.users.byRole} totalUsers={summary.total_users} />
-        <MostActiveUsersCard topUsers={points.topUsers} />
+        <MostActiveUsersCard topUsers={points.topUsers} onViewChange={onViewChange} />
       </section>
 
       {/* Fila 4: Recompensas Más Canjeadas */}
@@ -276,38 +278,99 @@ function PointsEconomyCard({ redeemedPoints, totalPoints }: { redeemedPoints: nu
   )
 }
 
-function MostActiveUsersCard({ topUsers }: { topUsers: DashboardTopUser[] }) {
+function MostActiveUsersCard({
+  topUsers,
+  onViewChange,
+}: {
+  topUsers: DashboardTopUser[]
+  onViewChange?: (view: AdminView) => void
+}) {
   const demoUsers: DashboardTopUser[] = [
-    { id: '1', first_name: 'Luis', last_name: 'Martínez', points: 100075990 },
-    { id: '2', first_name: 'User', last_name: 'Test', points: 155 },
-    { id: '3', first_name: 'Juan', last_name: 'Pérez', points: 25 },
-    { id: '4', first_name: 'Lucas', last_name: 'Mono', points: 18 },
+    { id: '1', first_name: 'Luis', last_name: 'Martínez', points: 100075990, role: 'USER' },
+    { id: '2', first_name: 'User', last_name: 'Test', points: 155, role: 'USER' },
+    { id: '3', first_name: 'Juan', last_name: 'Pérez', points: 25, role: 'USER' },
+    { id: '4', first_name: 'Lucas', last_name: 'Mono', points: 18, role: 'USER' },
+    { id: '5', first_name: 'Admin', last_name: 'Sistema', points: 99999999, role: 'ADMIN' },
   ]
 
-  const users = topUsers.length > 0 ? topUsers : demoUsers
+  const rawUsers = topUsers.length > 0 ? topUsers : demoUsers
+
+  // Filtrar estrictamente solo los usuarios ACTIVOS que tengan rol USER (o sin rol especificado)
+  const userOnlyList = rawUsers
+    .filter((user) => (!user.role || user.role === 'USER') && (!user.status || user.status === 'ACTIVE'))
+    .sort((a, b) => b.points - a.points)
+
+  const rankBadgeStyle = (rank: number) => {
+    switch (rank) {
+      case 1:
+        return 'bg-amber-500/15 text-amber-700 border-amber-500/30 font-black'
+      case 2:
+        return 'bg-slate-300/30 text-slate-700 border-slate-400/30 font-extrabold'
+      case 3:
+        return 'bg-amber-700/15 text-amber-900 border-amber-700/30 font-bold'
+      default:
+        return 'bg-surface-container text-on-surface-variant font-bold border-transparent'
+    }
+  }
 
   return (
-    <Panel title="Usuarios Más Activos">
-      <div className="divide-y divide-outline-variant/60">
-        {users.slice(0, 4).map((user, idx) => (
-          <div key={user.id} className="flex items-center justify-between py-3 first:pt-0 last:pb-0">
-            <div className="flex items-center gap-3">
-              <span className="flex h-6 w-6 items-center justify-center text-xs font-bold text-on-surface-variant">
-                {idx + 1}
-              </span>
-              <div className="flex h-9 w-9 items-center justify-center rounded-full bg-surface-container text-primary font-bold">
-                <FiUser size={18} />
-              </div>
-              <span className="font-bold text-sm text-on-surface">{user.first_name} {user.last_name}</span>
-            </div>
+    <Panel
+      title="Podio de Usuarios"
+      action={
+        onViewChange && (
+          <button
+            onClick={() => onViewChange('podium')}
+            className="inline-flex items-center gap-1 text-xs font-semibold text-primary hover:underline cursor-pointer"
+          >
+            Ver Podio <FiArrowUpRight size={14} />
+          </button>
+        )
+      }
+    >
+      {userOnlyList.length === 0 ? (
+        <div className="py-8 text-center text-xs text-on-surface-variant">
+          No hay usuarios registrados en la clasificación del podio.
+        </div>
+      ) : (
+        <div className="divide-y divide-outline-variant/60">
+          {userOnlyList.slice(0, 5).map((user, idx) => {
+            const rank = idx + 1
+            return (
+              <div
+                key={user.id}
+                onClick={() => onViewChange?.('podium')}
+                className="flex items-center justify-between py-3 transition-colors hover:bg-surface-container/40 cursor-pointer first:pt-0 last:pb-0 px-1 rounded-lg"
+              >
+                <div className="flex items-center gap-3">
+                  <span
+                    className={`flex h-7 w-7 items-center justify-center rounded-full border text-xs transition-transform duration-200 ${rankBadgeStyle(
+                      rank,
+                    )}`}
+                  >
+                    {rank}
+                  </span>
+                  <div className="flex h-9 w-9 items-center justify-center rounded-full bg-primary/10 text-primary font-bold">
+                    <FiUser size={18} />
+                  </div>
+                  <div>
+                    <span className="block font-bold text-sm text-on-surface">
+                      {user.first_name} {user.last_name}
+                    </span>
+                    <span className="inline-block text-[11px] font-medium text-on-surface-variant">
+                      Usuario
+                    </span>
+                  </div>
+                </div>
 
-            <div className="flex items-center gap-1 text-sm font-bold text-primary">
-              <span>{formatNumber(user.points)} pts</span>
-              <FiArrowUpRight size={16} />
-            </div>
-          </div>
-        ))}
-      </div>
+                <div className="flex items-center gap-1 text-sm font-extrabold text-primary">
+                  <span>{formatNumber(user.points)} pts</span>
+                  <FiArrowUpRight size={16} />
+                </div>
+              </div>
+            )
+          })}
+        </div>
+      )}
     </Panel>
   )
 }

@@ -2,6 +2,7 @@ import type { AuditLog } from '../../types'
 
 export type AdminView =
   | 'dashboard'
+  | 'podium'
   | 'users'
   | 'organizations'
   | 'missions'
@@ -37,6 +38,7 @@ export type AuditFilters = {
   actorCedula: string
   entityType: string
   targetCedula: string
+  search?: string
 }
 
 export type UserFilters = {

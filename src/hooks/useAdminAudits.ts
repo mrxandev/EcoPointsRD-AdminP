@@ -5,7 +5,7 @@ import type { AdminUser, AuditLog } from '../types'
 
 export function useAdminAudits(users: AdminUser[], onError: (error: unknown) => void) {
   const [audits, setAudits] = useState<AuditLog[]>([])
-  const [auditFilters, setAuditFilters] = useState<AuditFilters>({ action: '', actorCedula: '', entityType: '', targetCedula: '' })
+  const [auditFilters, setAuditFilters] = useState<AuditFilters>({ action: '', actorCedula: '', entityType: '', targetCedula: '', search: '' })
   const [loadingAudits, setLoadingAudits] = useState(false)
 
   const usersRef = useRef(users)
