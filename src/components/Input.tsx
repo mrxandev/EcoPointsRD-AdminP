@@ -11,10 +11,11 @@ type InputProps = {
   leftIcon?: ReactNode
   list?: string
   maxLength?: number
+  required?: boolean
   type?: string
 }
 
-function Input({ error, inputMode, label, leftIcon, list, maxLength, value, onChange, placeholder, type = 'text' }: InputProps) {
+function Input({ error, inputMode, label, leftIcon, list, maxLength, required, value, onChange, placeholder, type = 'text' }: InputProps) {
   const id = useId()
   const visibleLabel = label ?? placeholder
 
@@ -35,7 +36,12 @@ function Input({ error, inputMode, label, leftIcon, list, maxLength, value, onCh
           aria-invalid={Boolean(error)}
           aria-label={visibleLabel}
         />
-        {visibleLabel && <label className={`floating-label ${leftIcon ? 'floating-label-icon' : ''}`} htmlFor={id}>{visibleLabel}</label>}
+        {visibleLabel && (
+          <label className={`floating-label ${leftIcon ? 'floating-label-icon' : ''}`} htmlFor={id}>
+            {visibleLabel}
+            {required && <span className="text-red-500 font-bold ml-1">*</span>}
+          </label>
+        )}
       </span>
       {error && <span className="field-error">{error}</span>}
     </div>

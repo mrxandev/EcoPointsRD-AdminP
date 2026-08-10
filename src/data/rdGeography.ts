@@ -42,16 +42,14 @@ export const ALL_PROVINCE_NAMES = RD_PROVINCES.map((p) => p.name)
 
 export function getMunicipalitiesForProvince(provinceName?: string): string[] {
   if (!provinceName || !provinceName.trim()) {
-    const all = RD_PROVINCES.flatMap((p) => p.municipalities)
-    return Array.from(new Set(all)).sort()
+    return []
   }
   const clean = provinceName.trim().toLowerCase()
   const found = RD_PROVINCES.find(
-    (p) => p.name.toLowerCase() === clean || p.name.toLowerCase().includes(clean)
+    (p) => p.name.toLowerCase() === clean || p.name.toLowerCase().includes(clean) || clean.includes(p.name.toLowerCase())
   )
   if (found && found.municipalities.length > 0) {
     return found.municipalities
   }
-  const all = RD_PROVINCES.flatMap((p) => p.municipalities)
-  return Array.from(new Set(all)).sort()
+  return []
 }

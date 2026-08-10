@@ -336,7 +336,7 @@ function ResourcePage({ config, onToast, users }: ResourcePageProps) {
             ) : (
               <div className="grid items-end gap-3 md:grid-cols-3">
                 {displayFilterFields.map((field) => (
-                  <FieldControl
+                  <FilterFieldControl
                     key={field.key}
                     field={field}
                     value={filters[field.key] ?? ''}
@@ -559,10 +559,85 @@ function ReferenceFieldControl({ field, onChange, options, value }: { field: Mod
   return (
     <Select
       label={formatReferenceFieldLabel(field)}
+      required={field.required}
       options={selectOptions}
       value={value}
       onChange={onChange}
     />
+  )
+}
+
+function FilterFieldControl({
+  field,
+  onChange,
+  value,
+}: {
+  field: ModuleField
+  onChange: (value: string) => void
+  value: string
+}) {
+  const options = field.options ?? []
+
+  if (field.type === 'date' || field.key.endsWith('_date') || field.key === 'desde' || field.key === 'hasta' || field.key === 'start_date' || field.key === 'end_date') {
+    return (
+      <div>
+        <label className="text-xs font-bold text-on-surface-variant block mb-1.5">
+          {field.label}
+        </label>
+        <div className="relative">
+          <FiCalendar className="absolute left-3 top-1/2 -translate-y-1/2 text-on-surface-variant pointer-events-none" size={16} />
+          <input
+            type="date"
+            value={value}
+            onChange={(e) => onChange(e.target.value)}
+            className="w-full rounded-lg border border-outline-variant bg-surface px-3 py-2.5 pl-9 text-sm text-on-surface focus:border-primary focus:outline-hidden font-semibold transition-colors cursor-pointer"
+          />
+        </div>
+      </div>
+    )
+  }
+
+  if (field.type === 'select' || field.type === 'choice' || options.length > 0) {
+    const normalizedOptions = options.map((opt) =>
+      typeof opt === 'string' ? { label: opt || 'Todos', value: opt } : { label: opt.label, value: opt.value }
+    )
+
+    return (
+      <div>
+        <label className="text-xs font-bold text-on-surface-variant block mb-1.5">
+          {field.label}
+        </label>
+        <select
+          value={value}
+          onChange={(e) => onChange(e.target.value)}
+          className="w-full rounded-lg border border-outline-variant bg-surface px-3 py-2.5 text-sm text-on-surface focus:border-primary focus:outline-hidden font-semibold transition-colors cursor-pointer"
+        >
+          {normalizedOptions.map((opt) => (
+            <option key={opt.value} value={opt.value}>
+              {opt.label}
+            </option>
+          ))}
+        </select>
+      </div>
+    )
+  }
+
+  return (
+    <div>
+      <label className="text-xs font-bold text-on-surface-variant block mb-1.5">
+        {field.label}
+      </label>
+      <div className="relative">
+        <FiSearch className="absolute left-3 top-1/2 -translate-y-1/2 text-on-surface-variant" size={16} />
+        <input
+          type="text"
+          placeholder={`Buscar por ${field.label.toLowerCase()}...`}
+          value={value}
+          onChange={(e) => onChange(e.target.value)}
+          className="w-full rounded-lg border border-outline-variant bg-surface px-3 py-2.5 pl-9 text-sm text-on-surface placeholder:text-on-surface-variant/70 focus:border-primary focus:outline-hidden transition-colors"
+        />
+      </div>
+    </div>
   )
 }
 
@@ -599,19 +674,22 @@ function FieldControl({
   }
 
   if (field.type === 'select') {
-    return <Select label={field.label} value={value} options={field.options ?? []} onChange={onChange} />
+    return <Select label={field.label} required={field.required} value={value} options={field.options ?? []} onChange={onChange} />
   }
 
   if (field.type === 'textarea') {
     return (
       <label className="field">
-        <span className="field-label">{field.label}</span>
+        <span className="field-label">
+          {field.label}
+          {field.required && <span className="text-red-500 font-bold ml-1">*</span>}
+        </span>
         <textarea className="input min-h-28 resize-y" value={value} onChange={(event) => onChange(event.target.value)} />
       </label>
     )
   }
 
-  return <Input label={field.label} placeholder={field.label} type={field.type ?? 'text'} value={value} onChange={onChange} />
+  return <Input label={field.label} placeholder={field.label} required={field.required} type={field.type ?? 'text'} value={value} onChange={onChange} />
 }
 
 function ChoiceControl({ field, onChange, value }: { field: ModuleField; onChange: (value: string) => void; value: string }) {
@@ -639,7 +717,10 @@ function ChoiceControl({ field, onChange, value }: { field: ModuleField; onChang
 
   return (
     <div className="choice-field">
-      <span>{field.label}</span>
+      <span>
+        {field.label}
+        {field.required && <span className="text-red-500 font-bold ml-1">*</span>}
+      </span>
       <div className="choice-grid">
         {normalizedOptions.map((option) => {
           const isOther = isOtherChoice(option.value, option.label)
