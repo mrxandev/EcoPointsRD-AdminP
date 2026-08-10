@@ -212,10 +212,10 @@ export const moduleConfigs: Partial<Record<AdminView, ModuleConfig>> = {
   },
   recycling: {
     title: 'Reciclaje',
-    description: 'Consulta logs de reciclaje y registra reciclajes manuales con puntos.',
+    description: 'Consulta logs de reciclaje y registra reciclajes manuales con cálculo automático de puntos por peso (lbs).',
     endpoint: '/api/admin/recycling/logs',
     listKeys: ['recyclingLogs', 'data', 'results'],
-    columns: ['user_id', 'center_id', 'material_type', 'weight_kg', 'points_awarded', 'created_at'],
+    columns: ['user_id', 'material_type', 'weight_kg', 'points_awarded', 'created_at'],
     canCreate: true,
     filters: [
       { key: 'user_id', label: 'Usuario' },
@@ -223,10 +223,22 @@ export const moduleConfigs: Partial<Record<AdminView, ModuleConfig>> = {
     ],
     fields: [
       { key: 'user_id', label: 'Usuario', required: true },
-      { key: 'center_id', label: 'Centro' },
-      { key: 'material_type', label: 'Material', required: true },
-      { key: 'weight_kg', label: 'Peso KG', type: 'number' },
-      { key: 'points_awarded', label: 'Puntos otorgados', type: 'number' },
+      {
+        key: 'material_type',
+        label: 'Tipo de Material',
+        type: 'select',
+        required: true,
+        options: [
+          { label: 'Latas de Aluminio (40 pts/lb)', value: 'ALUMINUM' },
+          { label: 'Vidrio (3 pts/lb)', value: 'GLASS' },
+          { label: 'Botellas PET (10 pts/lb)', value: 'PET' },
+          { label: 'Papel y Cartón (5 pts/lb)', value: 'PAPER' },
+          { label: 'Electrónicos (50 pts/lb)', value: 'E_WASTE' },
+          { label: 'Otros Materiales (10 pts/lb)', value: 'OTHER' },
+        ],
+      },
+      { key: 'weight_lbs', label: 'Peso en Libras (lbs)', type: 'number', required: true },
+      { key: 'points_awarded', label: 'Puntos a Otorgar', type: 'number', required: true },
     ],
   },
   notifications: {
