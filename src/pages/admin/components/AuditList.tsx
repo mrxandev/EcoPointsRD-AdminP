@@ -14,36 +14,36 @@ function AuditList({ audits, expanded = false, users = [] }: AuditListProps) {
   const [pageSize, setPageSize] = useState(10)
 
   if (!audits.length) {
-    return <p className="rounded-md bg-surface-container px-4 py-6 text-center text-sm text-on-surface-variant">No hay auditorias para mostrar.</p>
+    return <p className="table-empty">No hay auditorías para mostrar.</p>
   }
 
   const paginatedAudits = audits.slice((currentPage - 1) * pageSize, currentPage * pageSize)
 
   return (
-    <div className="space-y-3">
-      <div className="-mx-4 overflow-x-auto px-4 sm:mx-0 sm:px-0">
-        <table className="w-full min-w-[760px] text-left text-sm lg:min-w-[980px]">
-          <thead className="text-xs uppercase text-on-surface-variant">
+    <div className="data-table-shell">
+      <div className="overflow-x-auto">
+        <table className="data-table min-w-[820px] lg:min-w-[980px]">
+          <thead>
             <tr>
-              <th className="p-3">Accion</th>
-              <th className="p-3">Actor</th>
-              <th className="p-3">Usuario afectado</th>
-              <th className="p-3">Entidad</th>
-              <th className="p-3">Razon</th>
-              <th className="p-3">Fecha</th>
-              {expanded && <th className="p-3">Cambios</th>}
+              <th>Acción</th>
+              <th>Actor</th>
+              <th>Usuario afectado</th>
+              <th>Entidad</th>
+              <th>Razón</th>
+              <th>Fecha</th>
+              {expanded && <th>Cambios</th>}
             </tr>
           </thead>
           <tbody>
             {paginatedAudits.map((audit) => (
-              <tr key={audit.id} className="border-t border-outline-variant align-top hover:bg-surface-container-low">
-                <td className="p-3"><Badge label={audit.action} /></td>
-                <td className="p-3">{formatAuditUser(audit.actor_id, users)}</td>
-                <td className="p-3">{formatAuditUser(audit.target_user_id, users)}</td>
-                <td className="p-3">{audit.entity_type}</td>
-                <td className="max-w-xs p-3 text-on-surface-variant">{audit.reason || 'Sin razon'}</td>
-                <td className="p-3 text-on-surface-variant">{formatDate(audit.created_at)}</td>
-                {expanded && <td className="p-3"><ChangeSummary oldValues={audit.old_values} newValues={audit.new_values} /></td>}
+              <tr key={audit.id} className="align-top">
+                <td><Badge label={audit.action} /></td>
+                <td className="font-semibold text-on-surface">{formatAuditUser(audit.actor_id, users)}</td>
+                <td className="font-semibold text-on-surface">{formatAuditUser(audit.target_user_id, users)}</td>
+                <td className="font-medium text-on-surface">{audit.entity_type}</td>
+                <td className="max-w-xs text-on-surface-variant">{audit.reason || 'Sin razón'}</td>
+                <td className="text-on-surface-variant text-xs">{formatDate(audit.created_at)}</td>
+                {expanded && <td><ChangeSummary oldValues={audit.old_values} newValues={audit.new_values} /></td>}
               </tr>
             ))}
           </tbody>

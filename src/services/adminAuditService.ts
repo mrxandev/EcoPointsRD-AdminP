@@ -5,16 +5,14 @@ import { readList } from '../pages/admin/utils'
 import type { AdminUser, AuditLog } from '../types'
 
 export async function getAdminAuditLogs(filters: AuditFilters, users: AdminUser[]) {
-  const actorQuery = filters.actorCedula.trim()
-  const targetQuery = filters.targetCedula.trim()
-  const actorId = actorQuery ? resolveUserIdByCedula(actorQuery, users) : ''
-  const targetUserId = targetQuery ? resolveUserIdByCedula(targetQuery, users) : ''
+  const actorQuery = (filters.actorCedula || '').trim()
+  const targetQuery = (filters.targetCedula || '').trim()
+  const generalSearch = (filters.search || '').trim()
 
   const params = Object.fromEntries(
     Object.entries({
       action: filters.action,
       entity_type: filters.entityType,
-      user_id: actorId || targetUserId,
     }).filter(([, value]) => value),
   )
 
@@ -26,12 +24,30 @@ export async function getAdminAuditLogs(filters: AuditFilters, users: AdminUser[
     return []
   }
 
+  const matchingActorUserIds = actorQuery ? findMatchingUserIds(actorQuery, users) : null
+  const matchingTargetUserIds = targetQuery ? findMatchingUserIds(targetQuery, users) : null
+
   if (actorQuery) {
-    logs = logs.filter((log) => matchAuditUser(log.actor_id, actorQuery, users))
+    logs = logs.filter((log) => matchAuditUser(log.actor_id, actorQuery, users, matchingActorUserIds))
   }
 
   if (targetQuery) {
-    logs = logs.filter((log) => matchAuditUser(log.target_user_id, targetQuery, users))
+    logs = logs.filter((log) => matchAuditUser(log.target_user_id, targetQuery, users, matchingTargetUserIds))
+  }
+
+  if (generalSearch && !targetQuery && !actorQuery) {
+    const matchingSearchUserIds = findMatchingUserIds(generalSearch, users)
+    const normalizedGeneral = normalizeSearch(generalSearch)
+
+    logs = logs.filter((log) => {
+      const matchActor = matchAuditUser(log.actor_id, generalSearch, users, matchingSearchUserIds)
+      const matchTarget = matchAuditUser(log.target_user_id, generalSearch, users, matchingSearchUserIds)
+      const matchAction = normalizeSearch(log.action).includes(normalizedGeneral)
+      const matchEntity = normalizeSearch(log.entity_type).includes(normalizedGeneral)
+      const matchReason = normalizeSearch(log.reason || '').includes(normalizedGeneral)
+
+      return matchActor || matchTarget || matchAction || matchEntity || matchReason
+    })
   }
 
   return logs
@@ -46,30 +62,44 @@ export async function getAuditLogsByTargetUser(targetUserId: string) {
   }
 }
 
-function resolveUserIdByCedula(searchQuery: string, users: AdminUser[]) {
-  if (!searchQuery.trim()) return ''
+function findMatchingUserIds(searchQuery: string, users: AdminUser[]): Set<string> {
   const query = normalizeSearch(searchQuery)
   const digits = onlyDigits(searchQuery)
+  const matchedIds = new Set<string>()
 
-  if (digits) {
-    const matchCedula = users.find((user) => {
-      const userDigits = onlyDigits(user.cedula)
-      return userDigits === digits || userDigits.includes(digits)
-    })
-    if (matchCedula) return matchCedula.id
-  }
+  if (!query) return matchedIds
 
-  const matchUser = users.find((user) => {
+  users.forEach((user) => {
     const fullName = normalizeSearch(`${user.first_name} ${user.last_name}`)
+    const firstName = normalizeSearch(user.first_name)
+    const lastName = normalizeSearch(user.last_name)
     const email = normalizeSearch(user.email)
+    const cedula = normalizeSearch(user.cedula)
+    const userDigits = onlyDigits(user.cedula)
     const id = normalizeSearch(user.id)
-    return fullName.includes(query) || email.includes(query) || id.includes(query)
+
+    if (
+      fullName.includes(query) ||
+      firstName.includes(query) ||
+      lastName.includes(query) ||
+      email.includes(query) ||
+      cedula.includes(query) ||
+      (digits !== '' && userDigits.includes(digits)) ||
+      id.includes(query)
+    ) {
+      matchedIds.add(user.id)
+    }
   })
 
-  return matchUser ? matchUser.id : ''
+  return matchedIds
 }
 
-function matchAuditUser(userId: string | null, query: string, users: AdminUser[]): boolean {
+function matchAuditUser(
+  userId: string | null,
+  query: string,
+  users: AdminUser[],
+  matchingUserIds: Set<string> | null,
+): boolean {
   if (!query) return true
   const normalizedQuery = normalizeSearch(query)
 
@@ -77,6 +107,12 @@ function matchAuditUser(userId: string | null, query: string, users: AdminUser[]
     return 'sistema'.includes(normalizedQuery) || 'system'.includes(normalizedQuery)
   }
 
+  // 1. Verificar si el ID del usuario fue encontrado en los usuarios coincidentes
+  if (matchingUserIds && matchingUserIds.has(userId)) {
+    return true
+  }
+
+  // 2. Verificar datos en el usuario si está en el listado
   const user = users.find((u) => u.id === userId)
   if (user) {
     const fullName = normalizeSearch(`${user.first_name} ${user.last_name}`)
@@ -85,6 +121,7 @@ function matchAuditUser(userId: string | null, query: string, users: AdminUser[]
     const email = normalizeSearch(user.email)
     const cedula = normalizeSearch(user.cedula)
     const cedulaDigits = onlyDigits(user.cedula)
+    const queryDigits = onlyDigits(query)
     const id = normalizeSearch(user.id)
 
     return (
@@ -93,11 +130,12 @@ function matchAuditUser(userId: string | null, query: string, users: AdminUser[]
       lastName.includes(normalizedQuery) ||
       email.includes(normalizedQuery) ||
       cedula.includes(normalizedQuery) ||
-      cedulaDigits.includes(normalizedQuery) ||
+      (queryDigits !== '' && cedulaDigits.includes(queryDigits)) ||
       id.includes(normalizedQuery)
     )
   }
 
+  // 3. Comparación por defecto de cadenas
   return normalizeSearch(userId).includes(normalizedQuery)
 }
 

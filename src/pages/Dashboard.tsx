@@ -10,6 +10,7 @@ import AuditPage from './admin/audit/AuditPage'
 import DashboardHome from './admin/dashboard/DashboardHome'
 import ResourcePage from './admin/modules/ResourcePage'
 import { moduleConfigs } from './admin/modules/moduleConfig'
+import PodiumPage from './admin/podium/PodiumPage'
 import type { AdminView } from './admin/types'
 import UsersPage from './admin/users/UsersPage'
 
@@ -62,6 +63,14 @@ function Dashboard({ admin, onLogout }: DashboardProps) {
       {view === 'dashboard' && (
         <DashboardHome
           stats={dashboard.stats}
+          onViewChange={setView}
+        />
+      )}
+
+      {view === 'podium' && (
+        <PodiumPage
+          users={users.users}
+          topUsers={dashboard.stats.points.topUsers}
         />
       )}
 

@@ -63,7 +63,10 @@ export type DashboardPointTotals = {
   redeemed: number
 }
 
-export type DashboardTopUser = Pick<AdminUser, 'id' | 'first_name' | 'last_name' | 'points'>
+export type DashboardTopUser = Pick<AdminUser, 'id' | 'first_name' | 'last_name' | 'points'> & {
+  role?: UserRole
+  status?: UserStatus
+}
 
 export type DashboardPointTransaction = {
   id: string
