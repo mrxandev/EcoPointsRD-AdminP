@@ -82,10 +82,56 @@ function UsersPage(props: UsersPageProps) {
         </div>
 
         <Panel title="Busqueda rapida" action={<button className="icon-tab" onClick={props.onLoadUsers} title="Actualizar usuarios" aria-label="Actualizar usuarios"><FiRefreshCw /></button>}>
-          <div className="grid items-end gap-3 md:grid-cols-[1fr_180px_180px]">
-            <Input label="Nombre, email o cedula" leftIcon={<FiSearch />} placeholder="Buscar usuario..." value={filters.search} onChange={(value) => props.onFiltersChange({ ...filters, search: value })} />
-            <Select label="Rol de usuario" value={filters.role} onChange={(value) => props.onFiltersChange({ ...filters, role: value })} options={['', ...roles]} />
-            <Select label="Estado cuenta" value={filters.status} onChange={(value) => props.onFiltersChange({ ...filters, status: value })} options={['', ...statuses]} />
+          <div className="grid gap-4 md:grid-cols-3 items-end">
+            <div>
+              <label className="text-xs font-bold text-on-surface-variant block mb-1.5">
+                Buscar Usuario
+              </label>
+              <div className="relative">
+                <FiSearch className="absolute left-3 top-1/2 -translate-y-1/2 text-on-surface-variant" size={16} />
+                <input
+                  type="text"
+                  placeholder="Buscar por nombre, correo o cédula..."
+                  value={filters.search}
+                  onChange={(e) => props.onFiltersChange({ ...filters, search: e.target.value })}
+                  className="w-full rounded-lg border border-outline-variant bg-surface px-3 py-2.5 pl-9 text-sm text-on-surface placeholder:text-on-surface-variant/70 focus:border-primary focus:outline-hidden transition-colors"
+                />
+              </div>
+            </div>
+            <div>
+              <label className="text-xs font-bold text-on-surface-variant block mb-1.5">
+                Rol de Usuario
+              </label>
+              <select
+                value={filters.role}
+                onChange={(e) => props.onFiltersChange({ ...filters, role: e.target.value as UserRole })}
+                className="w-full rounded-lg border border-outline-variant bg-surface px-3 py-2.5 text-sm text-on-surface focus:border-primary focus:outline-hidden font-semibold transition-colors cursor-pointer"
+              >
+                <option value="">Todos los roles</option>
+                {roles.map((r) => (
+                  <option key={r} value={r}>
+                    {r === 'ADMIN' ? 'Administrador' : r === 'AGENT' ? 'Agente' : 'Usuario'}
+                  </option>
+                ))}
+              </select>
+            </div>
+            <div>
+              <label className="text-xs font-bold text-on-surface-variant block mb-1.5">
+                Estado Cuenta
+              </label>
+              <select
+                value={filters.status}
+                onChange={(e) => props.onFiltersChange({ ...filters, status: e.target.value as UserStatus })}
+                className="w-full rounded-lg border border-outline-variant bg-surface px-3 py-2.5 text-sm text-on-surface focus:border-primary focus:outline-hidden font-semibold transition-colors cursor-pointer"
+              >
+                <option value="">Todos los estados</option>
+                {statuses.map((s) => (
+                  <option key={s} value={s}>
+                    {s === 'ACTIVE' ? 'Activo' : s === 'SUSPENDED' ? 'Suspendido' : 'Baneado'}
+                  </option>
+                ))}
+              </select>
+            </div>
           </div>
         </Panel>
 

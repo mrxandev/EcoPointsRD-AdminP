@@ -336,7 +336,7 @@ function ResourcePage({ config, onToast, users }: ResourcePageProps) {
             ) : (
               <div className="grid items-end gap-3 md:grid-cols-3">
                 {displayFilterFields.map((field) => (
-                  <FieldControl
+                  <FilterFieldControl
                     key={field.key}
                     field={field}
                     value={filters[field.key] ?? ''}
@@ -563,6 +563,80 @@ function ReferenceFieldControl({ field, onChange, options, value }: { field: Mod
       value={value}
       onChange={onChange}
     />
+  )
+}
+
+function FilterFieldControl({
+  field,
+  onChange,
+  value,
+}: {
+  field: ModuleField
+  onChange: (value: string) => void
+  value: string
+}) {
+  const options = field.options ?? []
+
+  if (field.type === 'date' || field.key.endsWith('_date') || field.key === 'desde' || field.key === 'hasta' || field.key === 'start_date' || field.key === 'end_date') {
+    return (
+      <div>
+        <label className="text-xs font-bold text-on-surface-variant block mb-1.5">
+          {field.label}
+        </label>
+        <div className="relative">
+          <FiCalendar className="absolute left-3 top-1/2 -translate-y-1/2 text-on-surface-variant pointer-events-none" size={16} />
+          <input
+            type="date"
+            value={value}
+            onChange={(e) => onChange(e.target.value)}
+            className="w-full rounded-lg border border-outline-variant bg-surface px-3 py-2.5 pl-9 text-sm text-on-surface focus:border-primary focus:outline-hidden font-semibold transition-colors cursor-pointer"
+          />
+        </div>
+      </div>
+    )
+  }
+
+  if (field.type === 'select' || field.type === 'choice' || options.length > 0) {
+    const normalizedOptions = options.map((opt) =>
+      typeof opt === 'string' ? { label: opt || 'Todos', value: opt } : { label: opt.label, value: opt.value }
+    )
+
+    return (
+      <div>
+        <label className="text-xs font-bold text-on-surface-variant block mb-1.5">
+          {field.label}
+        </label>
+        <select
+          value={value}
+          onChange={(e) => onChange(e.target.value)}
+          className="w-full rounded-lg border border-outline-variant bg-surface px-3 py-2.5 text-sm text-on-surface focus:border-primary focus:outline-hidden font-semibold transition-colors cursor-pointer"
+        >
+          {normalizedOptions.map((opt) => (
+            <option key={opt.value} value={opt.value}>
+              {opt.label}
+            </option>
+          ))}
+        </select>
+      </div>
+    )
+  }
+
+  return (
+    <div>
+      <label className="text-xs font-bold text-on-surface-variant block mb-1.5">
+        {field.label}
+      </label>
+      <div className="relative">
+        <FiSearch className="absolute left-3 top-1/2 -translate-y-1/2 text-on-surface-variant" size={16} />
+        <input
+          type="text"
+          placeholder={`Buscar por ${field.label.toLowerCase()}...`}
+          value={value}
+          onChange={(e) => onChange(e.target.value)}
+          className="w-full rounded-lg border border-outline-variant bg-surface px-3 py-2.5 pl-9 text-sm text-on-surface placeholder:text-on-surface-variant/70 focus:border-primary focus:outline-hidden transition-colors"
+        />
+      </div>
+    </div>
   )
 }
 
