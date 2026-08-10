@@ -136,7 +136,7 @@ function ResourcePage({ config, onToast, users }: ResourcePageProps) {
       void (async () => {
         try {
           const [allUsers, organizations, missions, rewards] = await Promise.all([
-            getAdminUsers({ role: '', status: '', search: '' }),
+            getAdminUsers({ role: '', status: 'ACTIVE', search: '' }),
             listAdminResource('/api/admin/organizations', ['organizations', 'data', 'results'], {}),
             listAdminResource('/api/admin/missions', ['missions', 'data', 'results'], {}),
             listAdminResource('/api/admin/rewards', ['rewards', 'data', 'results'], {}),
@@ -355,7 +355,7 @@ function ResourceTable({
   const [currentPage, setCurrentPage] = useState(1)
   const [pageSize, setPageSize] = useState(10)
 
-  if (records.length === 0) return <p className="rounded-lg bg-surface-container-low p-4 text-sm text-on-surface-variant">No hay registros para mostrar.</p>
+  if (records.length === 0) return <p className="table-empty">No hay registros para mostrar.</p>
   const showActions = true
 
   const paginatedRecords = records.slice((currentPage - 1) * pageSize, currentPage * pageSize)
@@ -856,11 +856,13 @@ function buildDisplayFilterFields(fields: ModuleField[]) {
 
 function getReferenceOptions(fieldKey: string, references: ResourceReferences, users: AdminUser[]): ReferenceOption[] {
   if (fieldKey === 'user_id') {
-    return users.map((user) => ({
-      value: user.id,
-      label: `${getUserName(user)} - ${user.cedula}`,
-      keywords: normalizeText([getUserName(user), user.cedula, onlyDigits(user.cedula), user.email].filter(Boolean).join(' ')),
-    }))
+    return users
+      .filter((user) => !user.status || user.status === 'ACTIVE')
+      .map((user) => ({
+        value: user.id,
+        label: `${getUserName(user)} - ${user.cedula}`,
+        keywords: normalizeText([getUserName(user), user.cedula, onlyDigits(user.cedula), user.email].filter(Boolean).join(' ')),
+      }))
   }
 
   if (fieldKey === 'organization_id' || fieldKey === 'sponsor_id' || fieldKey === 'center_id') {
@@ -929,20 +931,22 @@ function findUserBySearch(search: string, users: AdminUser[]) {
   const normalizedSearch = normalizeText(search)
   const cedulaDigits = onlyDigits(search)
 
-  return users.find((user) => {
-    const searchable = [
-      user.cedula,
-      cedulaDigits ? onlyDigits(user.cedula) : '',
-      user.first_name,
-      user.last_name,
-      getUserName(user),
-      user.email,
-    ]
-      .filter(Boolean)
-      .map((value) => normalizeText(String(value)))
+  return users
+    .filter((user) => !user.status || user.status === 'ACTIVE')
+    .find((user) => {
+      const searchable = [
+        user.cedula,
+        cedulaDigits ? onlyDigits(user.cedula) : '',
+        user.first_name,
+        user.last_name,
+        getUserName(user),
+        user.email,
+      ]
+        .filter(Boolean)
+        .map((value) => normalizeText(String(value)))
 
-    return searchable.some((value) => value.includes(normalizedSearch) || (cedulaDigits && value.includes(cedulaDigits)))
-  })
+      return searchable.some((value) => value.includes(normalizedSearch) || (cedulaDigits && value.includes(cedulaDigits)))
+    })
 }
 
 function resolveReferenceLabel(column: string, value: unknown, references: ResourceReferences, users: AdminUser[]) {

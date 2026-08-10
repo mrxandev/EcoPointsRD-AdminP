@@ -30,6 +30,7 @@ type DashboardLayoutProps = {
 
 const navItems: Array<{ icon: ReactNode; label: string; view: AdminView }> = [
   { view: 'dashboard', label: 'Dashboard', icon: <FiBarChart2 /> },
+  { view: 'podium', label: 'Podio', icon: <FiAward /> },
   { view: 'users', label: 'Usuarios', icon: <FiUsers /> },
   { view: 'organizations', label: 'Organizaciones', icon: <FiPackage /> },
   { view: 'missions', label: 'Misiones', icon: <FiTarget /> },

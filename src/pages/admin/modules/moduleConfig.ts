@@ -144,7 +144,6 @@ export const moduleConfigs: Partial<Record<AdminView, ModuleConfig>> = {
     actions: [
       { action: 'publish', label: 'Publicar', tone: 'success' },
       { action: 'start', label: 'Iniciar', tone: 'success' },
-      { action: 'complete', label: 'Completar', tone: 'success' },
       { action: 'cancel', label: 'Cancelar', tone: 'danger' },
     ],
   },
