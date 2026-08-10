@@ -91,7 +91,7 @@ function UserDetail(props: UserDetailProps) {
                     <PhoneInput label="Telefono" value={String(editForm.phone ?? '')} onChange={(value) => props.onEditFormChange({ ...editForm, phone: value })} />
                   </div>
                   <div className="grid gap-3 sm:grid-cols-2">
-                    <ProvinceInput value={String(editForm.province ?? '')} onChange={(value) => props.onEditFormChange({ ...editForm, province: value })} />
+                    <ProvinceInput value={String(editForm.province ?? '')} onChange={(value) => props.onEditFormChange({ ...editForm, province: value, municipality: '' })} />
                     <MunicipalityInput province={String(editForm.province ?? '')} value={String(editForm.municipality ?? '')} onChange={(value) => props.onEditFormChange({ ...editForm, municipality: value })} />
                   </div>
                   <label className="flex items-center gap-2 text-sm text-on-surface pt-1 cursor-pointer">

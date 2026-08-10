@@ -170,7 +170,7 @@ function UsersPage(props: UsersPageProps) {
                   <Select label="Rol" value={createForm.role} onChange={(value) => props.onCreateFormChange({ ...createForm, role: value as UserRole })} options={roles} />
                   <Select label="Estado" value={createForm.status} onChange={(value) => props.onCreateFormChange({ ...createForm, status: value as UserStatus })} options={statuses} />
                 </div>
-                <ProvinceInput value={createForm.province} onChange={(value) => props.onCreateFormChange({ ...createForm, province: value })} />
+                <ProvinceInput value={createForm.province} onChange={(value) => props.onCreateFormChange({ ...createForm, province: value, municipality: '' })} />
                 <MunicipalityInput province={createForm.province} value={createForm.municipality} onChange={(value) => props.onCreateFormChange({ ...createForm, municipality: value })} />
               </div>
               <button className="button-primary w-full mt-2" disabled={savingAction === 'create'}>
