@@ -11,6 +11,7 @@ import {
   FiPauseCircle,
   FiPlayCircle,
   FiRefreshCw,
+  FiSearch,
   FiSend,
   FiSettings,
   FiSlash,
@@ -69,10 +70,49 @@ function ResourcePage({ config, onToast, users }: ResourcePageProps) {
   const hasList = config.columns.length > 0
   const isMissionModule = config.endpoint === '/api/admin/missions'
   const isPointsModule = config.endpoint === '/api/admin/points/transactions' || config.title === 'Puntos'
+  const isRecyclingModule = config.endpoint.includes('recycling') || config.title === 'Reciclaje'
   const formTitle = selected && config.canUpdate ? `Editar ${config.title}` : config.createTitle ?? `Crear ${config.title}`
   const displayFilterFields = useMemo(() => buildDisplayFilterFields(filterFields), [filterFields])
   const lookupUsers = referenceUsers.length ? referenceUsers : users
   const resolvedFilters = useMemo(() => resolveUserFilters(filters, lookupUsers), [filters, lookupUsers])
+
+  const displayRecords = useMemo(() => {
+    if (!isRecyclingModule) return records
+
+    const userQuery = String(filters.user_id ?? '').trim().toLowerCase()
+    const matQuery = String(filters.material_type ?? '').trim().toUpperCase()
+    const standardMaterials = ['ALUMINUM', 'GLASS', 'PET', 'PAPER', 'E_WASTE']
+
+    return records.filter((r) => {
+      if (matQuery) {
+        const itemMat = String(r.material_type ?? '').trim().toUpperCase()
+        if (matQuery === 'OTHER') {
+          if (standardMaterials.includes(itemMat)) {
+            return false
+          }
+        } else if (itemMat !== matQuery) {
+          return false
+        }
+      }
+
+      if (userQuery) {
+        const u = lookupUsers.find((user) => String(user.id) === String(r.user_id))
+        const matchUserId = String(r.user_id ?? '').toLowerCase().includes(userQuery)
+
+        if (!u) {
+          return matchUserId
+        }
+
+        const matchName = getUserName(u).toLowerCase().includes(userQuery)
+        const matchEmail = String(u.email ?? '').toLowerCase().includes(userQuery)
+        const matchCedula = String(u.cedula ?? '').toLowerCase().includes(userQuery)
+
+        return matchUserId || matchName || matchEmail || matchCedula
+      }
+
+      return true
+    })
+  }, [isRecyclingModule, records, filters.user_id, filters.material_type, lookupUsers])
 
   const loadRecords = useCallback(async () => {
     if (!hasList) return
@@ -179,11 +219,37 @@ function ResourcePage({ config, onToast, users }: ResourcePageProps) {
 
     setSaving(true)
     try {
+      const rawPayload = Object.fromEntries(
+        Object.entries(form).map(([key, val]) => [key, val === '' ? null : val])
+      )
+
+      const sanitizedPayload: Record<string, unknown> = { ...rawPayload }
+
+      const isUuid = (str: unknown) => typeof str === 'string' && /^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i.test(str.trim())
+
+      // Limpiar claves foráneas opcionales que no tengan un UUID válido
+      Object.keys(sanitizedPayload).forEach((key) => {
+        if (key.endsWith('_id') && key !== 'user_id') {
+          if (!isUuid(sanitizedPayload[key])) {
+            sanitizedPayload[key] = null
+          }
+        }
+      })
+
+      if (isRecyclingModule) {
+        const lbs = parseFloat(String(sanitizedPayload.weight_lbs ?? sanitizedPayload.weight_kg ?? '0')) || 0
+        const pts = parseInt(String(sanitizedPayload.points_awarded ?? '0'), 10) || 0
+
+        sanitizedPayload.weight_lbs = lbs
+        sanitizedPayload.weight_kg = lbs
+        sanitizedPayload.points_awarded = pts
+      }
+
       if (selected?.id && config.canUpdate) {
-        await updateAdminResource(config.endpoint, selected.id, form)
+        await updateAdminResource(config.endpoint, selected.id, sanitizedPayload)
         onToast('Registro actualizado correctamente.', 'success')
       } else {
-        await createAdminResource(resolveCreateEndpoint(config, form), form)
+        await createAdminResource(resolveCreateEndpoint(config, sanitizedPayload), sanitizedPayload)
         onToast('Registro creado correctamente.', 'success')
       }
 
@@ -230,16 +296,55 @@ function ResourcePage({ config, onToast, users }: ResourcePageProps) {
 
         {filterFields.length > 0 && (
           <Panel title="Busqueda rapida" action={<button className="icon-tab" onClick={loadRecords} title={`Actualizar ${config.title}`} aria-label={`Actualizar ${config.title}`}><FiRefreshCw /></button>}>
-            <div className="grid items-end gap-3 md:grid-cols-3">
-              {displayFilterFields.map((field) => (
-                <FieldControl
-                  key={field.key}
-                  field={field}
-                  value={filters[field.key] ?? ''}
-                  onChange={(value) => setFilters((current) => ({ ...current, [field.key]: value }))}
-                />
-              ))}
-            </div>
+            {isRecyclingModule ? (
+              <div className="grid gap-4 md:grid-cols-2">
+                {/* Buscador de Usuario estandarizado estilo Audit */}
+                <div>
+                  <label className="text-xs font-bold text-on-surface-variant block mb-1.5">
+                    Usuario
+                  </label>
+                  <div className="relative">
+                    <FiSearch className="absolute left-3 top-1/2 -translate-y-1/2 text-on-surface-variant" size={16} />
+                    <input
+                      type="text"
+                      placeholder="Buscar por usuario (nombre, correo o cédula)..."
+                      value={filters.user_id ?? ''}
+                      onChange={(e) => setFilters((current) => ({ ...current, user_id: e.target.value }))}
+                      className="w-full rounded-lg border border-outline-variant bg-surface px-3 py-2.5 pl-9 text-sm text-on-surface placeholder:text-on-surface-variant/70 focus:border-primary focus:outline-hidden transition-colors"
+                    />
+                  </div>
+                </div>
+
+                {/* Selector de Material estandarizado estilo Audit */}
+                <div>
+                  <label className="text-xs font-bold text-on-surface-variant block mb-1.5">
+                    Material
+                  </label>
+                  <select
+                    value={filters.material_type ?? ''}
+                    onChange={(e) => setFilters((current) => ({ ...current, material_type: e.target.value }))}
+                    className="w-full rounded-lg border border-outline-variant bg-surface px-3 py-2.5 text-sm text-on-surface focus:border-primary focus:outline-hidden font-semibold transition-colors cursor-pointer"
+                  >
+                    {getRecyclingMaterialFilterOptions().map((opt) => (
+                      <option key={opt.value} value={opt.value}>
+                        {opt.label}
+                      </option>
+                    ))}
+                  </select>
+                </div>
+              </div>
+            ) : (
+              <div className="grid items-end gap-3 md:grid-cols-3">
+                {displayFilterFields.map((field) => (
+                  <FieldControl
+                    key={field.key}
+                    field={field}
+                    value={filters[field.key] ?? ''}
+                    onChange={(value) => setFilters((current) => ({ ...current, [field.key]: value }))}
+                  />
+                ))}
+              </div>
+            )}
           </Panel>
         )}
 
@@ -254,7 +359,7 @@ function ResourcePage({ config, onToast, users }: ResourcePageProps) {
               actions={config.actions ?? []}
               columns={config.columns}
               references={references}
-              records={records}
+              records={isRecyclingModule ? displayRecords : records}
               saving={saving}
               selectable={Boolean(config.canUpdate)}
               users={lookupUsers}
@@ -270,6 +375,14 @@ function ResourcePage({ config, onToast, users }: ResourcePageProps) {
         <form className="space-y-4" onSubmit={handleSubmit}>
           {isPointsModule ? (
             <PointsAdjustmentForm
+              fields={fields}
+              form={form}
+              references={references}
+              users={lookupUsers}
+              onChange={(key, value) => setForm((current) => ({ ...current, [key]: value }))}
+            />
+          ) : isRecyclingModule ? (
+            <RecyclingLogForm
               fields={fields}
               form={form}
               references={references}
@@ -375,7 +488,7 @@ function ResourceTable({
             <tr key={String(record.id ?? index)} className="align-top">
               {columns.map((column) => (
                 <td key={column} className="max-w-[240px]">
-                  {renderValue(column, record[column], references, users)}
+                  {renderValue(column, record[column], references, users, record)}
                 </td>
               ))}
               {showActions && (
@@ -733,10 +846,16 @@ function resolveCreateEndpoint(config: ModuleConfig, form: Record<string, unknow
   return config.createEndpoint ?? config.endpoint
 }
 
-function renderValue(column: string, value: unknown, references: ResourceReferences, users: AdminUser[]) {
+function renderValue(column: string, value: unknown, references: ResourceReferences, users: AdminUser[], record?: AdminRecord) {
   if (column === 'created_at' || column.endsWith('_at')) return <span className="text-on-surface-variant">{formatDate(String(value ?? ''))}</span>
   if ((column === 'status' || column.endsWith('_status') || column.endsWith('_type') || column === 'role') && value) {
     return <Badge label={String(value)} tone={badgeTone(String(value))} />
+  }
+  if (column === 'weight_kg' || column === 'weight_lbs') {
+    const rawVal = value ?? record?.weight_kg ?? record?.weight_lbs
+    if (rawVal !== null && rawVal !== undefined && rawVal !== '') {
+      return <span className="font-semibold text-on-surface">{String(rawVal)} lbs</span>
+    }
   }
   if (typeof value === 'boolean') return value ? 'Si' : 'No'
   if (value === null || value === undefined || value === '') return <span className="text-on-surface-variant">-</span>
@@ -798,7 +917,8 @@ function formatColumn(column: string) {
     actor_id: 'Actor',
     target_user_id: 'Usuario Afectado',
     material_type: 'Tipo de Material',
-    weight_kg: 'Peso (KG)',
+    weight_kg: 'Peso (LBS)',
+    weight_lbs: 'Peso (LBS)',
     points_awarded: 'Puntos Otorgados',
     stock: 'Stock',
     created_by: 'Creado por',
@@ -824,6 +944,10 @@ function formatDetailValue(key: string, value: unknown, references: ResourceRefe
     )
   }
 
+  if (key === 'weight_kg' || key === 'weight_lbs') {
+    return <span className="font-semibold text-on-surface">{String(value)} lbs</span>
+  }
+
   if (key === 'created_at' || key.endsWith('_at') || key.endsWith('_date')) {
     return formatDate(String(value))
   }
@@ -838,6 +962,18 @@ function formatDetailValue(key: string, value: unknown, references: ResourceRefe
   if (typeof value === 'object') return JSON.stringify(value)
 
   return translateText(String(value))
+}
+
+function getRecyclingMaterialFilterOptions() {
+  return [
+    { label: 'Todos los materiales', value: '' },
+    { label: 'Latas de Aluminio (40 pts/lb)', value: 'ALUMINUM' },
+    { label: 'Vidrio (3 pts/lb)', value: 'GLASS' },
+    { label: 'Botellas PET (10 pts/lb)', value: 'PET' },
+    { label: 'Papel y Cartón (5 pts/lb)', value: 'PAPER' },
+    { label: 'Electrónicos (50 pts/lb)', value: 'E_WASTE' },
+    { label: 'Otros Materiales (10 pts/lb)', value: 'OTHER' },
+  ]
 }
 
 function buildDisplayFilterFields(fields: ModuleField[]) {
@@ -1219,6 +1355,139 @@ function PointsAdjustmentForm({
               onChange={(val) => onChange('description', val)}
             />
           )}
+        </div>
+      </div>
+    </div>
+  )
+}
+
+function getMaterialRate(materialType: string): { rate: number; label: string } {
+  const norm = (materialType || '').normalize('NFD').replace(/[\u0300-\u036f]/g, '').toLowerCase()
+
+  if (norm.includes('alumin') || norm.includes('lata') || norm === 'aluminum') {
+    return { rate: 40, label: 'Latas de Aluminio (40 pts/lb)' }
+  }
+  if (norm.includes('vidrio') || norm === 'glass') {
+    return { rate: 3, label: 'Vidrio (3 pts/lb)' }
+  }
+  if (norm.includes('pet') || norm.includes('botella') || norm.includes('plastic') || norm === 'pet') {
+    return { rate: 10, label: 'Botellas PET (10 pts/lb)' }
+  }
+  if (norm.includes('papel') || norm.includes('carton') || norm === 'paper') {
+    return { rate: 5, label: 'Papel y Cartón (5 pts/lb)' }
+  }
+  if (norm.includes('electron') || norm === 'e_waste') {
+    return { rate: 50, label: 'Electrónicos (50 pts/lb)' }
+  }
+
+  return { rate: 10, label: 'Otros Materiales (10 pts/lb)' }
+}
+
+function RecyclingLogForm({
+  fields,
+  form,
+  references,
+  users,
+  onChange,
+}: {
+  fields: ModuleField[]
+  form: Record<string, unknown>
+  references: ResourceReferences
+  users: AdminUser[]
+  onChange: (key: string, value: unknown) => void
+}) {
+  const materialType = String(form.material_type ?? 'ALUMINUM')
+  const rawWeight = String(form.weight_lbs ?? form.weight_kg ?? '')
+  const weightLbs = parseFloat(rawWeight) || 0
+
+  const { rate } = getMaterialRate(materialType)
+
+  // Cálculo automático: Peso (lbs) * Tasa (pts/lb)
+  const calculatedPoints = Math.round(weightLbs * rate * 100) / 100
+
+  useEffect(() => {
+    if (!form.material_type) {
+      onChange('material_type', 'ALUMINUM')
+    }
+  }, [])
+
+  useEffect(() => {
+    onChange('points_awarded', calculatedPoints)
+    if (weightLbs > 0) {
+      onChange('weight_kg', weightLbs)
+      onChange('weight_lbs', weightLbs)
+    }
+  }, [materialType, weightLbs, calculatedPoints])
+
+  return (
+    <div className="space-y-4">
+      <div className="grid gap-4 md:grid-cols-2">
+        {/* Bento Card 1: Selección de Usuario */}
+        <div className="rounded-xl border border-outline-variant bg-surface-container-low p-4 space-y-4">
+          <div className="flex items-center gap-2 text-sm font-semibold text-on-surface border-b border-outline-variant pb-2">
+            <FiFileText className="text-primary" />
+            <span>Datos del Usuario</span>
+          </div>
+
+          {/* Selector de Usuario */}
+          {fields.find((f) => f.key === 'user_id') && (
+            <ResourceFieldControl
+              field={fields.find((f) => f.key === 'user_id')!}
+              formValues={form}
+              references={references}
+              users={users}
+              value={String(form.user_id ?? '')}
+              onChange={(val) => onChange('user_id', val)}
+            />
+          )}
+        </div>
+
+        {/* Bento Card 2: Material, Peso y Puntos */}
+        <div className="rounded-xl border border-outline-variant bg-surface-container-low p-4 space-y-4">
+          <div className="flex items-center gap-2 text-sm font-semibold text-on-surface border-b border-outline-variant pb-2">
+            <FiSettings className="text-tertiary" />
+            <span>Material y Peso Entregado</span>
+          </div>
+
+          {/* Selector de Material */}
+          <Select
+            label="Tipo de Material Reciclado"
+            value={materialType}
+            options={[
+              { label: 'Latas de Aluminio (40 pts/lb)', value: 'ALUMINUM' },
+              { label: 'Vidrio (3 pts/lb)', value: 'GLASS' },
+              { label: 'Botellas PET (10 pts/lb)', value: 'PET' },
+              { label: 'Papel y Cartón (5 pts/lb)', value: 'PAPER' },
+              { label: 'Electrónicos (50 pts/lb)', value: 'E_WASTE' },
+              { label: 'Otros Materiales (10 pts/lb)', value: 'OTHER' },
+            ]}
+            onChange={(val) => onChange('material_type', val)}
+          />
+
+          {/* Input de Peso numérico estricto */}
+          <Input
+            label="Peso del Material (Libras / lbs)"
+            placeholder="Ej: 3.5, 10 o 2.2"
+            type="number"
+            inputMode="decimal"
+            value={String(form.weight_lbs ?? form.weight_kg ?? '')}
+            onChange={(val) => {
+              const cleanVal = val.replace(/[^0-9.]/g, '')
+              onChange('weight_lbs', cleanVal)
+            }}
+          />
+
+          {/* Resumen del cálculo de puntos no editable */}
+          <div className="rounded-lg border border-primary/30 bg-surface p-3.5 space-y-2">
+            <div className="flex items-center justify-between text-xs font-semibold text-on-surface-variant">
+              <span>Fórmula Aplicada:</span>
+              <span className="text-primary font-bold">{weightLbs} lbs × {rate} pts/lb</span>
+            </div>
+            <div className="flex items-center justify-between pt-1 border-t border-outline-variant/40">
+              <span className="text-sm font-bold text-on-surface">Puntos a Otorgar:</span>
+              <span className="text-xl font-black text-primary">{calculatedPoints} pts</span>
+            </div>
+          </div>
         </div>
       </div>
     </div>
