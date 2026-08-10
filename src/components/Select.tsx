@@ -13,9 +13,10 @@ type SelectProps = {
   disabled?: boolean
   error?: string
   label?: string
+  required?: boolean
 }
 
-function Select({ disabled, error, label, value, onChange, options }: SelectProps) {
+function Select({ disabled, error, label, required, value, onChange, options }: SelectProps) {
   const id = useId()
 
   return (
@@ -40,7 +41,12 @@ function Select({ disabled, error, label, value, onChange, options }: SelectProp
             )
           })}
         </select>
-        {label && <label className="floating-label floating-label-active" htmlFor={id}>{label}</label>}
+        {label && (
+          <label className="floating-label floating-label-active" htmlFor={id}>
+            {label}
+            {required && <span className="text-red-500 font-bold ml-1">*</span>}
+          </label>
+        )}
       </span>
       {error && <span className="field-error">{error}</span>}
     </div>

@@ -559,6 +559,7 @@ function ReferenceFieldControl({ field, onChange, options, value }: { field: Mod
   return (
     <Select
       label={formatReferenceFieldLabel(field)}
+      required={field.required}
       options={selectOptions}
       value={value}
       onChange={onChange}
@@ -673,19 +674,22 @@ function FieldControl({
   }
 
   if (field.type === 'select') {
-    return <Select label={field.label} value={value} options={field.options ?? []} onChange={onChange} />
+    return <Select label={field.label} required={field.required} value={value} options={field.options ?? []} onChange={onChange} />
   }
 
   if (field.type === 'textarea') {
     return (
       <label className="field">
-        <span className="field-label">{field.label}</span>
+        <span className="field-label">
+          {field.label}
+          {field.required && <span className="text-red-500 font-bold ml-1">*</span>}
+        </span>
         <textarea className="input min-h-28 resize-y" value={value} onChange={(event) => onChange(event.target.value)} />
       </label>
     )
   }
 
-  return <Input label={field.label} placeholder={field.label} type={field.type ?? 'text'} value={value} onChange={onChange} />
+  return <Input label={field.label} placeholder={field.label} required={field.required} type={field.type ?? 'text'} value={value} onChange={onChange} />
 }
 
 function ChoiceControl({ field, onChange, value }: { field: ModuleField; onChange: (value: string) => void; value: string }) {
@@ -713,7 +717,10 @@ function ChoiceControl({ field, onChange, value }: { field: ModuleField; onChang
 
   return (
     <div className="choice-field">
-      <span>{field.label}</span>
+      <span>
+        {field.label}
+        {field.required && <span className="text-red-500 font-bold ml-1">*</span>}
+      </span>
       <div className="choice-grid">
         {normalizedOptions.map((option) => {
           const isOther = isOtherChoice(option.value, option.label)

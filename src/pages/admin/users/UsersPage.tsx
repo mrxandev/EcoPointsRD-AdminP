@@ -149,14 +149,14 @@ function UsersPage(props: UsersPageProps) {
                 <FiUser className="text-primary" />
                 <span>Información Personal</span>
               </div>
-              <Input label="Cedula" error={createErrors.cedula} inputMode="numeric" maxLength={13} placeholder="000-0000000-0" value={formatDominicanCedula(createForm.cedula)} onChange={(value) => props.onCreateFormChange({ ...createForm, cedula: formatDominicanCedula(value) })} />
+              <Input label="Cedula" required error={createErrors.cedula} inputMode="numeric" maxLength={13} placeholder="000-0000000-0" value={formatDominicanCedula(createForm.cedula)} onChange={(value) => props.onCreateFormChange({ ...createForm, cedula: formatDominicanCedula(value) })} />
               <PhoneInput label="Telefono" value={createForm.phone} onChange={(value) => props.onCreateFormChange({ ...createForm, phone: value })} />
               <div className="grid gap-3 sm:grid-cols-2">
-                <Input label="Nombre" error={createErrors.first_name} placeholder="Nombre" value={createForm.first_name} onChange={(value) => props.onCreateFormChange({ ...createForm, first_name: value })} />
-                <Input label="Apellido" error={createErrors.last_name} placeholder="Apellido" value={createForm.last_name} onChange={(value) => props.onCreateFormChange({ ...createForm, last_name: value })} />
+                <Input label="Nombre" required error={createErrors.first_name} placeholder="Nombre" value={createForm.first_name} onChange={(value) => props.onCreateFormChange({ ...createForm, first_name: value })} />
+                <Input label="Apellido" required error={createErrors.last_name} placeholder="Apellido" value={createForm.last_name} onChange={(value) => props.onCreateFormChange({ ...createForm, last_name: value })} />
               </div>
-              <Input label="Email" error={createErrors.email} placeholder="Email" value={createForm.email} onChange={(value) => props.onCreateFormChange({ ...createForm, email: value })} />
-              <Input label="Contraseña" error={createErrors.password} placeholder="Contraseña" type="password" value={createForm.password} onChange={(value) => props.onCreateFormChange({ ...createForm, password: value })} />
+              <Input label="Email" required error={createErrors.email} placeholder="Email" value={createForm.email} onChange={(value) => props.onCreateFormChange({ ...createForm, email: value })} />
+              <Input label="Contraseña" required error={createErrors.password} placeholder="Contraseña" type="password" value={createForm.password} onChange={(value) => props.onCreateFormChange({ ...createForm, password: value })} />
             </div>
 
             {/* Bento Card 2: Rol, Estado y Ubicación */}
@@ -167,8 +167,8 @@ function UsersPage(props: UsersPageProps) {
                   <span>Rol, Estado y Ubicación</span>
                 </div>
                 <div className="grid gap-3 sm:grid-cols-2">
-                  <Select label="Rol" value={createForm.role} onChange={(value) => props.onCreateFormChange({ ...createForm, role: value as UserRole })} options={roles} />
-                  <Select label="Estado" value={createForm.status} onChange={(value) => props.onCreateFormChange({ ...createForm, status: value as UserStatus })} options={statuses} />
+                  <Select label="Rol" required value={createForm.role} onChange={(value) => props.onCreateFormChange({ ...createForm, role: value as UserRole })} options={roles} />
+                  <Select label="Estado" required value={createForm.status} onChange={(value) => props.onCreateFormChange({ ...createForm, status: value as UserStatus })} options={statuses} />
                 </div>
                 <ProvinceInput value={createForm.province} onChange={(value) => props.onCreateFormChange({ ...createForm, province: value, municipality: '' })} />
                 <MunicipalityInput province={createForm.province} value={createForm.municipality} onChange={(value) => props.onCreateFormChange({ ...createForm, municipality: value })} />

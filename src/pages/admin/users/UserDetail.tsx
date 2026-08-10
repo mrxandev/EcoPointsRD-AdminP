@@ -82,12 +82,12 @@ function UserDetail(props: UserDetailProps) {
                 </div>
                 <form id="user-profile-form" onSubmit={props.onSubmit} className="space-y-3">
                   <div className="grid gap-3 sm:grid-cols-2">
-                    <Input label="Nombre" placeholder="Nombre" value={String(editForm.first_name ?? '')} onChange={(value) => props.onEditFormChange({ ...editForm, first_name: value })} />
-                    <Input label="Apellido" placeholder="Apellido" value={String(editForm.last_name ?? '')} onChange={(value) => props.onEditFormChange({ ...editForm, last_name: value })} />
+                    <Input label="Nombre" required placeholder="Nombre" value={String(editForm.first_name ?? '')} onChange={(value) => props.onEditFormChange({ ...editForm, first_name: value })} />
+                    <Input label="Apellido" required placeholder="Apellido" value={String(editForm.last_name ?? '')} onChange={(value) => props.onEditFormChange({ ...editForm, last_name: value })} />
                   </div>
-                  <Input label="Email" placeholder="Email" value={String(editForm.email ?? '')} onChange={(value) => props.onEditFormChange({ ...editForm, email: value })} />
+                  <Input label="Email" required placeholder="Email" value={String(editForm.email ?? '')} onChange={(value) => props.onEditFormChange({ ...editForm, email: value })} />
                   <div className="grid gap-3 sm:grid-cols-2">
-                    <Input label="Cedula" inputMode="numeric" maxLength={13} placeholder="000-0000000-0" value={formatDominicanCedula(String(editForm.cedula ?? ''))} onChange={(value) => props.onEditFormChange({ ...editForm, cedula: formatDominicanCedula(value) })} />
+                    <Input label="Cedula" required inputMode="numeric" maxLength={13} placeholder="000-0000000-0" value={formatDominicanCedula(String(editForm.cedula ?? ''))} onChange={(value) => props.onEditFormChange({ ...editForm, cedula: formatDominicanCedula(value) })} />
                     <PhoneInput label="Telefono" value={String(editForm.phone ?? '')} onChange={(value) => props.onEditFormChange({ ...editForm, phone: value })} />
                   </div>
                   <div className="grid gap-3 sm:grid-cols-2">
