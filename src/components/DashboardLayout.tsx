@@ -33,6 +33,7 @@ const navItems: Array<{ icon: ReactNode; label: string; view: AdminView }> = [
   { view: 'podium', label: 'Podio', icon: <FiAward /> },
   { view: 'users', label: 'Usuarios', icon: <FiUsers /> },
   { view: 'organizations', label: 'Organizaciones', icon: <FiPackage /> },
+  { view: 'recyclingCenters', label: 'Centros', icon: <FiMapPin /> },
   { view: 'missions', label: 'Misiones', icon: <FiTarget /> },
   { view: 'points', label: 'Puntos', icon: <FiAward /> },
   { view: 'rewards', label: 'Recompensas', icon: <FiGift /> },
