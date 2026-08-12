@@ -66,6 +66,7 @@ export type DashboardPointTotals = {
 export type DashboardTopUser = Pick<AdminUser, 'id' | 'first_name' | 'last_name' | 'points'> & {
   role?: UserRole
   status?: UserStatus
+  profile_image?: string | null
 }
 
 export type DashboardPointTransaction = {

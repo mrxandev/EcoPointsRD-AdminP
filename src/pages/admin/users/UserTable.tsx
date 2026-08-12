@@ -39,7 +39,26 @@ function UserTable({ onAction, onSelect, users }: UserTableProps) {
               <tr key={user.id}>
                 <td>
                   <button className="user-cell" onClick={() => handleAction(user.id, 'view', onAction, onSelect)}>
-                    <span className="user-avatar">{getInitials(user)}</span>
+                    {user.profile_image ? (
+                      <img
+                        alt={`${user.first_name} ${user.last_name}`}
+                        className="user-avatar"
+                        onError={(e) => {
+                          const target = e.currentTarget
+                          target.style.display = 'none'
+                          const sibling = target.nextElementSibling as HTMLElement | null
+                          if (sibling) sibling.style.display = 'flex'
+                        }}
+                        src={user.profile_image}
+                        style={{ objectFit: 'cover' }}
+                      />
+                    ) : null}
+                    <span
+                      className="user-avatar"
+                      style={user.profile_image ? { display: 'none' } : undefined}
+                    >
+                      {getInitials(user)}
+                    </span>
                     <span className="min-w-0">
                       <strong>{user.first_name} {user.last_name}</strong>
                       <small>{user.email}</small>
