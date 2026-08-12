@@ -53,6 +53,12 @@ type ReferenceOption = {
   value: string
 }
 
+type PendingAction = {
+  action: string
+  label: string
+  record: AdminRecord
+} | null
+
 function ResourcePage({ config, onToast, users }: ResourcePageProps) {
   const [fields, setFields] = useState<ModuleField[]>(config.fields ?? [])
   const [filterFields, setFilterFields] = useState<ModuleField[]>(config.filters ?? [])
@@ -63,7 +69,9 @@ function ResourcePage({ config, onToast, users }: ResourcePageProps) {
   const emptyForm = useMemo(() => buildInitialForm(fields), [fields])
   const [form, setForm] = useState<Record<string, unknown>>(emptyForm)
   const [selected, setSelected] = useState<AdminRecord | null>(null)
-  const [modal, setModal] = useState<'create' | 'edit' | 'view' | null>(null)
+  const [modal, setModal] = useState<'create' | 'edit' | 'view' | 'confirmAction' | null>(null)
+  const [pendingAction, setPendingAction] = useState<PendingAction>(null)
+  const [actionNotes, setActionNotes] = useState('')
   const [loading, setLoading] = useState(false)
   const [saving, setSaving] = useState(false)
 
@@ -264,14 +272,33 @@ function ResourcePage({ config, onToast, users }: ResourcePageProps) {
     }
   }
 
-  const handleAction = async (record: AdminRecord, action: string) => {
+  const handleActionRequest = (record: AdminRecord, action: string, label: string) => {
     if (!record.id) return
 
-    const notes = action === 'reject' ? window.prompt('Notas del rechazo') ?? '' : ''
+    setPendingAction({ action, label, record })
+    setActionNotes('')
+    setModal('confirmAction')
+  }
+
+  const closeActionConfirmation = () => {
+    if (saving) return
+
+    setPendingAction(null)
+    setActionNotes('')
+    setModal(null)
+  }
+
+  const handleConfirmAction = async () => {
+    if (!pendingAction?.record.id) return
+
     setSaving(true)
     try {
-      await runAdminAction(config.endpoint, record.id, action, notes ? { notes } : {})
+      const payload = actionNotes.trim() ? { notes: actionNotes.trim() } : {}
+      await runAdminAction(config.endpoint, pendingAction.record.id, pendingAction.action, payload)
       onToast('Accion ejecutada correctamente.', 'success')
+      setPendingAction(null)
+      setActionNotes('')
+      setModal(null)
       await loadRecords()
     } catch (error) {
       onToast(getApiErrorMessage(error), 'error')
@@ -363,7 +390,7 @@ function ResourcePage({ config, onToast, users }: ResourcePageProps) {
               saving={saving}
               selectable={Boolean(config.canUpdate)}
               users={lookupUsers}
-              onAction={handleAction}
+              onAction={handleActionRequest}
               onSelect={handleSelect}
               onView={handleView}
             />
@@ -438,7 +465,85 @@ function ResourcePage({ config, onToast, users }: ResourcePageProps) {
       <Modal title={`Detalle de ${config.title}`} open={modal === 'view'} onClose={() => setModal(null)}>
         <RecordDetail record={selected} references={references} users={lookupUsers} />
       </Modal>
+
+      <Modal title="Confirmar accion" open={modal === 'confirmAction'} onClose={closeActionConfirmation}>
+        <ActionConfirmation
+          action={pendingAction}
+          notes={actionNotes}
+          saving={saving}
+          moduleTitle={config.title}
+          onCancel={closeActionConfirmation}
+          onConfirm={handleConfirmAction}
+          onNotesChange={setActionNotes}
+        />
+      </Modal>
     </>
+  )
+}
+
+function ActionConfirmation({
+  action,
+  moduleTitle,
+  notes,
+  saving,
+  onCancel,
+  onConfirm,
+  onNotesChange,
+}: {
+  action: PendingAction
+  moduleTitle: string
+  notes: string
+  saving: boolean
+  onCancel: () => void
+  onConfirm: () => void
+  onNotesChange: (value: string) => void
+}) {
+  if (!action) return <p className="table-empty">No hay accion seleccionada.</p>
+
+  const recordName = getRecordDisplayName(action.record)
+  const needsNotes = action.action === 'reject'
+
+  return (
+    <div className="space-y-4">
+      <div className="rounded-xl border border-warning/30 bg-warning/10 p-4 text-sm text-on-surface">
+        <div className="flex items-start gap-3">
+          <FiAlertCircle className="mt-0.5 shrink-0 text-lg text-warning" />
+          <div className="space-y-1">
+            <p className="font-bold">Estas a punto de ejecutar una accion.</p>
+            <p className="text-on-surface-variant">
+              Confirma si deseas <strong className="text-on-surface">{action.label.toLowerCase()}</strong> este registro de {moduleTitle.toLowerCase()}.
+            </p>
+          </div>
+        </div>
+      </div>
+
+      <div className="detail-item">
+        <span>Registro</span>
+        <strong>{recordName}</strong>
+      </div>
+
+      {needsNotes && (
+        <div className="field">
+          <label className="field-label" htmlFor="action-notes">Notas del rechazo</label>
+          <textarea
+            id="action-notes"
+            className="input min-h-28 resize-y"
+            placeholder="Motivo o comentario para el rechazo"
+            value={notes}
+            onChange={(event) => onNotesChange(event.target.value)}
+          />
+        </div>
+      )}
+
+      <div className="flex flex-col-reverse gap-2 sm:flex-row sm:justify-end">
+        <button className="button-secondary" disabled={saving} type="button" onClick={onCancel}>
+          Cancelar
+        </button>
+        <button className="button-primary" disabled={saving} type="button" onClick={onConfirm}>
+          {saving ? 'Ejecutando...' : `Confirmar ${action.label.toLowerCase()}`}
+        </button>
+      </div>
+    </div>
   )
 }
 
@@ -461,7 +566,7 @@ function ResourceTable({
   saving: boolean
   selectable: boolean
   users: AdminUser[]
-  onAction: (record: AdminRecord, action: string) => void
+  onAction: (record: AdminRecord, action: string, label: string) => void
   onSelect: (record: AdminRecord) => void
   onView: (record: AdminRecord) => void
 }) {
@@ -502,7 +607,7 @@ function ResourceTable({
                         danger={item.tone === 'danger'}
                         disabled={saving}
                         label={item.label}
-                        onClick={() => onAction(record, item.action)}
+                        onClick={() => onAction(record, item.action, item.label)}
                       >
                         {getActionIcon(item.action)}
                       </TableActionButton>
@@ -918,6 +1023,11 @@ function hasValidCoordinates(latitude: unknown, longitude: unknown) {
     parsedLongitude >= -180 &&
     parsedLongitude <= 180
   )
+}
+
+function getRecordDisplayName(record: AdminRecord) {
+  const label = record.title ?? record.name ?? record.email ?? record.description ?? record.id
+  return String(label ?? 'Registro seleccionado')
 }
 
 function buildInitialForm(fields: ModuleField[]) {
