@@ -1,5 +1,5 @@
 import { useState } from 'react'
-import { FiAward, FiSearch, FiUser } from 'react-icons/fi'
+import { FiSearch } from 'react-icons/fi'
 import { Panel, StatusBadge, TablePagination } from '../../../components'
 import type { AdminUser, DashboardTopUser } from '../../../types'
 
@@ -83,9 +83,11 @@ export default function PodiumPage({ users = [], topUsers = [] }: PodiumPageProp
               <span className="inline-flex h-8 w-8 items-center justify-center rounded-full bg-slate-200 text-slate-700 font-extrabold text-sm border border-slate-300">
                 2.º
               </span>
-              <div className="flex h-16 w-16 items-center justify-center rounded-full bg-slate-100 text-slate-700 font-bold border-2 border-slate-300">
-                <FiUser size={32} />
-              </div>
+              <UserAvatar
+                fallbackClassName="flex h-16 w-16 items-center justify-center rounded-full bg-slate-100 text-slate-700 font-bold text-lg border-2 border-slate-300"
+                imageClassName="h-16 w-16 rounded-full object-cover border-2 border-slate-300"
+                user={top2}
+              />
               <h3 className="font-bold text-base text-on-surface mt-1">
                 {top2.first_name} {top2.last_name}
               </h3>
@@ -108,9 +110,11 @@ export default function PodiumPage({ users = [], topUsers = [] }: PodiumPageProp
               <span className="inline-flex h-10 w-10 items-center justify-center rounded-full bg-amber-500 text-white font-black text-base shadow-xs">
                 1.º
               </span>
-              <div className="flex h-20 w-20 items-center justify-center rounded-full bg-amber-100 text-amber-800 font-bold border-2 border-amber-500">
-                <FiAward size={40} />
-              </div>
+              <UserAvatar
+                fallbackClassName="flex h-20 w-20 items-center justify-center rounded-full bg-amber-100 text-amber-800 font-bold text-2xl border-2 border-amber-500"
+                imageClassName="h-20 w-20 rounded-full object-cover border-2 border-amber-500"
+                user={top1}
+              />
               <h3 className="font-extrabold text-lg text-on-surface mt-1">
                 {top1.first_name} {top1.last_name}
               </h3>
@@ -130,9 +134,11 @@ export default function PodiumPage({ users = [], topUsers = [] }: PodiumPageProp
               <span className="inline-flex h-8 w-8 items-center justify-center rounded-full bg-amber-800/15 text-amber-900 font-extrabold text-sm border border-amber-800/30">
                 3.º
               </span>
-              <div className="flex h-16 w-16 items-center justify-center rounded-full bg-amber-50 text-amber-900 font-bold border-2 border-amber-700/40">
-                <FiUser size={32} />
-              </div>
+              <UserAvatar
+                fallbackClassName="flex h-16 w-16 items-center justify-center rounded-full bg-amber-50 text-amber-900 font-bold text-lg border-2 border-amber-700/40"
+                imageClassName="h-16 w-16 rounded-full object-cover border-2 border-amber-700/40"
+                user={top3}
+              />
               <h3 className="font-bold text-base text-on-surface mt-1">
                 {top3.first_name} {top3.last_name}
               </h3>
@@ -194,9 +200,11 @@ export default function PodiumPage({ users = [], topUsers = [] }: PodiumPageProp
                         </td>
                         <td>
                           <div className="user-cell">
-                            <div className="flex h-9 w-9 items-center justify-center rounded-full bg-primary/10 text-primary font-bold shrink-0">
-                              <FiUser size={18} />
-                            </div>
+                            <UserAvatar
+                              fallbackClassName="flex h-9 w-9 items-center justify-center rounded-full bg-primary/10 text-primary font-bold text-xs shrink-0"
+                              imageClassName="h-9 w-9 rounded-full object-cover shrink-0"
+                              user={user}
+                            />
                             <div className="min-w-0">
                               <strong className="text-sm font-bold text-on-surface truncate">
                                 {user.first_name} {user.last_name}
@@ -250,4 +258,37 @@ function getRankStyle(rank: number) {
 
 function formatNumber(value: number) {
   return new Intl.NumberFormat('es-DO').format(value)
+}
+
+type UserAvatarProps = {
+  user: { profile_image?: string | null; first_name: string; last_name: string } | null | undefined
+  imageClassName?: string
+  fallbackClassName?: string
+}
+
+function getInitials(user: { first_name: string; last_name: string }) {
+  return `${user.first_name?.[0] ?? ''}${user.last_name?.[0] ?? ''}`.toUpperCase() || 'U'
+}
+
+function UserAvatar({ fallbackClassName, imageClassName, user }: UserAvatarProps) {
+  const initials = user ? getInitials(user) : 'U'
+
+  if (!user?.profile_image) {
+    return <div className={fallbackClassName}>{initials}</div>
+  }
+
+  return (
+    <img
+      alt={`${user.first_name} ${user.last_name}`}
+      className={imageClassName}
+      onError={(e) => {
+        const img = e.currentTarget
+        const wrapper = document.createElement('div')
+        wrapper.className = fallbackClassName ?? ''
+        wrapper.textContent = initials
+        img.replaceWith(wrapper)
+      }}
+      src={user.profile_image}
+    />
+  )
 }
