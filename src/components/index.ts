@@ -15,3 +15,5 @@ export { default as TableActionButton } from './TableActionButton'
 export { default as TablePagination } from './TablePagination'
 export { default as ToastContainer } from './Toast'
 export type { ToastMessage, ToastTone } from './Toast'
+export { default as UserAvatar, getInitials } from './UserAvatar'
+
