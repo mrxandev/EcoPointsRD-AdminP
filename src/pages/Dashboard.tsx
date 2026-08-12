@@ -63,6 +63,7 @@ function Dashboard({ admin, onLogout }: DashboardProps) {
       {view === 'dashboard' && (
         <DashboardHome
           stats={dashboard.stats}
+          allUsers={users.users}
           onViewChange={setView}
         />
       )}

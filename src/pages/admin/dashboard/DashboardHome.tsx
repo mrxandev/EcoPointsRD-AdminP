@@ -1,16 +1,17 @@
 import { useState } from 'react'
-import { FiArrowUpRight, FiAward, FiCheckCircle, FiGift, FiTarget, FiUser, FiUsers } from 'react-icons/fi'
-import { Panel, StatCard } from '../../../components'
+import { FiArrowUpRight, FiAward, FiCheckCircle, FiGift, FiTarget, FiUsers } from 'react-icons/fi'
+import { Panel, StatCard, UserAvatar } from '../../../components'
 import { translateText } from '../../../utils/translations'
-import type { DashboardRewardItem, DashboardStats, DashboardTopUser } from '../../../types'
+import type { AdminUser, DashboardRewardItem, DashboardStats, DashboardTopUser } from '../../../types'
 import type { AdminView } from '../types'
 
 type DashboardHomeProps = {
   stats: DashboardStats
+  allUsers?: AdminUser[]
   onViewChange?: (view: AdminView) => void
 }
 
-function DashboardHome({ stats, onViewChange }: DashboardHomeProps) {
+function DashboardHome({ stats, allUsers = [], onViewChange }: DashboardHomeProps) {
   const { missions, points, rewards, summary } = stats
 
   const cards: Array<{
@@ -49,7 +50,7 @@ function DashboardHome({ stats, onViewChange }: DashboardHomeProps) {
       {/* Fila 3: Distribución de Usuarios & Usuarios Más Activos / Podio */}
       <section className="grid min-w-0 gap-6 xl:grid-cols-2">
         <UserDistributionCard byRole={stats.users.byRole} totalUsers={summary.total_users} onViewChange={onViewChange} />
-        <MostActiveUsersCard topUsers={points.topUsers} onViewChange={onViewChange} />
+        <MostActiveUsersCard topUsers={points.topUsers} allUsers={allUsers} onViewChange={onViewChange} />
       </section>
 
       {/* Fila 4: Recompensas Más Canjeadas */}
@@ -328,9 +329,11 @@ function PointsEconomyCard({
 
 function MostActiveUsersCard({
   topUsers,
+  allUsers = [],
   onViewChange,
 }: {
   topUsers: DashboardTopUser[]
+  allUsers?: AdminUser[]
   onViewChange?: (view: AdminView) => void
 }) {
   const demoUsers: DashboardTopUser[] = [
@@ -343,8 +346,20 @@ function MostActiveUsersCard({
 
   const rawUsers = topUsers.length > 0 ? topUsers : demoUsers
 
+  // Enriquecer rawUsers con la información completa de usuario (incluyendo profile_image)
+  const enrichedUsers = rawUsers.map((user) => {
+    if (user.profile_image) return user
+    const match = allUsers.find(
+      (u) =>
+        u.id === user.id ||
+        (u.first_name?.toLowerCase() === user.first_name?.toLowerCase() &&
+          u.last_name?.toLowerCase() === user.last_name?.toLowerCase())
+    )
+    return match ? { ...user, profile_image: match.profile_image } : user
+  })
+
   // Filtrar estrictamente solo los usuarios ACTIVOS que tengan rol USER (o sin rol especificado)
-  const userOnlyList = rawUsers
+  const userOnlyList = enrichedUsers
     .filter((user) => (!user.role || user.role === 'USER') && (!user.status || user.status === 'ACTIVE'))
     .sort((a, b) => b.points - a.points)
 
@@ -388,9 +403,11 @@ function MostActiveUsersCard({
                     >
                       {rank}
                     </span>
-                    <div className="flex h-9 w-9 items-center justify-center rounded-full bg-primary/10 text-primary font-bold">
-                      <FiUser size={18} />
-                    </div>
+                    <UserAvatar
+                      user={user}
+                      imageClassName="h-9 w-9 rounded-full object-cover shrink-0"
+                      fallbackClassName="flex h-9 w-9 items-center justify-center rounded-full bg-primary/10 text-primary font-bold text-xs shrink-0"
+                    />
                     <div>
                       <span className="block font-bold text-sm text-on-surface">
                         {user.first_name} {user.last_name}
