@@ -2,7 +2,7 @@ import { useCallback, useEffect, useState } from 'react'
 import type { FormEvent } from 'react'
 import { emptyUserForm } from '../constants'
 import { onlyDigits } from '../formatters'
-import type { UserFilters, SavingAction } from '../pages/admin/types'
+import type { SavingAction, UserFilters } from '../pages/admin/types'
 import { getAuditLogsByTargetUser } from '../services/adminAuditService'
 import {
   createAdminUser,
@@ -13,6 +13,8 @@ import {
   updateAdminUserStatus,
 } from '../services/adminUsersService'
 import type { AdminUser, AuditLog, UserFormState, UserRole, UserStatus } from '../types'
+
+const EMAIL_REGEX = /^[^\s@]+@[^\s@]+\.[^\s@]+$/
 
 export function useAdminUsers({
   onAfterMutation,
@@ -76,16 +78,65 @@ export function useAdminUsers({
         last_name: user.last_name,
         email: user.email,
         phone: user.phone,
-        is_verified: user.is_verified,
         province: user.province ?? '',
         municipality: user.municipality ?? '',
-        profile_image: user.profile_image ?? '',
+        is_verified: user.is_verified,
       })
       setRoleChange({ role: user.role, reason: '' })
       setStatusChange({ status: user.status, reason: '' })
     } catch (error) {
       onError(error)
     }
+  }
+
+  const handleCreateFormChange = (newForm: UserFormState) => {
+    setCreateForm(newForm)
+    setCreateErrors((prev) => {
+      const updated = { ...prev }
+      if (newForm.email?.trim() && EMAIL_REGEX.test(newForm.email.trim())) {
+        delete updated.email
+      }
+      if (newForm.first_name?.trim()) delete updated.first_name
+      if (newForm.last_name?.trim()) delete updated.last_name
+      if (onlyDigits(newForm.cedula).length === 11) delete updated.cedula
+      if (newForm.password && newForm.password.length >= 6) delete updated.password
+      return updated
+    })
+  }
+
+  const validateCreateForm = () => {
+    const errors: Partial<Record<keyof UserFormState, string>> = {}
+    const cedulaDigits = onlyDigits(createForm.cedula)
+
+    if (!cedulaDigits) {
+      errors.cedula = 'La cédula es requerida.'
+    } else if (cedulaDigits.length !== 11) {
+      errors.cedula = 'La cédula debe tener 11 dígitos.'
+    }
+
+    if (!createForm.first_name?.trim()) {
+      errors.first_name = 'El nombre es requerido.'
+    }
+
+    if (!createForm.last_name?.trim()) {
+      errors.last_name = 'El apellido es requerido.'
+    }
+
+    const emailTrimmed = createForm.email?.trim() ?? ''
+    if (!emailTrimmed) {
+      errors.email = 'El correo electrónico es requerido.'
+    } else if (!EMAIL_REGEX.test(emailTrimmed)) {
+      errors.email = 'Ingresa un correo electrónico válido (ejemplo: usuario@correo.com).'
+    }
+
+    if (!createForm.password) {
+      errors.password = 'La contraseña es requerida.'
+    } else if (createForm.password.length < 6) {
+      errors.password = 'La contraseña debe tener al menos 6 caracteres.'
+    }
+
+    setCreateErrors(errors)
+    return Object.keys(errors).length ? 'Por favor corrige los campos marcados antes de crear el usuario.' : ''
   }
 
   const createUser = async (event: FormEvent) => {
@@ -98,13 +149,24 @@ export function useAdminUsers({
 
     setSavingAction('create')
     try {
-      await createAdminUser(createForm)
+      await createAdminUser({
+        ...createForm,
+        email: createForm.email.trim().toLowerCase(),
+        first_name: createForm.first_name.trim(),
+        last_name: createForm.last_name.trim(),
+      })
       setCreateForm(emptyUserForm)
       setCreateErrors({})
       onToast('Usuario creado correctamente.', 'success')
       await loadUsers()
       await onAfterMutation()
-    } catch (error) {
+    } catch (error: any) {
+      const msg = String(error?.response?.data?.message || error?.message || '')
+      if (msg.toLowerCase().includes('email') || msg.toLowerCase().includes('correo')) {
+        setCreateErrors((prev) => ({ ...prev, email: 'El correo electrónico ya está registrado.' }))
+      } else if (msg.toLowerCase().includes('cedula')) {
+        setCreateErrors((prev) => ({ ...prev, cedula: 'La cédula ya está registrada.' }))
+      }
       onError(error)
     } finally {
       setSavingAction(null)
@@ -183,21 +245,6 @@ export function useAdminUsers({
     if (value.reason.trim()) setStatusReasonError('')
   }
 
-  const validateCreateForm = () => {
-    const errors: Partial<Record<keyof UserFormState, string>> = {}
-    const cedulaDigits = onlyDigits(createForm.cedula)
-
-    if (!cedulaDigits) errors.cedula = 'La cédula es requerida.'
-    else if (cedulaDigits.length !== 11) errors.cedula = 'Debe tener 11 dígitos.'
-    if (!createForm.first_name) errors.first_name = 'El nombre es requerido.'
-    if (!createForm.last_name) errors.last_name = 'El apellido es requerido.'
-    if (!createForm.email) errors.email = 'El email es requerido.'
-    if (!createForm.password) errors.password = 'La contraseña es requerida.'
-
-    setCreateErrors(errors)
-    return Object.keys(errors).length ? 'Completa los campos marcados antes de crear el usuario.' : ''
-  }
-
   return {
     createErrors,
     createForm,
@@ -211,7 +258,7 @@ export function useAdminUsers({
     savingAction,
     selectedUser,
     selectUser,
-    setCreateForm,
+    setCreateForm: handleCreateFormChange,
     setEditForm,
     setFilters,
     setRoleChange: setRoleChangeAndClearError,
