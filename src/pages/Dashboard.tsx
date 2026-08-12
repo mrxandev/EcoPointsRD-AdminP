@@ -1,11 +1,12 @@
 import { useCallback, useEffect, useState } from 'react'
 import { getApiErrorMessage } from '../api'
-import { DashboardLayout, ToastContainer } from '../components'
+import { DashboardLayout, EditAdminProfileModal, ToastContainer } from '../components'
 import { useAdminAudits } from '../hooks/useAdminAudits'
 import { useAdminDashboard } from '../hooks/useAdminDashboard'
 import { useAdminUsers } from '../hooks/useAdminUsers'
 import { useToasts } from '../hooks/useToasts'
-import type { AuthUser } from '../types'
+import { getMyProfile } from '../services/adminProfileService'
+import type { AdminUser, AuthUser } from '../types'
 import AuditPage from './admin/audit/AuditPage'
 import DashboardHome from './admin/dashboard/DashboardHome'
 import ResourcePage from './admin/modules/ResourcePage'
@@ -22,6 +23,8 @@ type DashboardProps = {
 function Dashboard({ admin, onLogout }: DashboardProps) {
   const [view, setView] = useState<AdminView>('dashboard')
   const [sidebarExpanded, setSidebarExpanded] = useState(true)
+  const [currentAdminUser, setCurrentAdminUser] = useState<AdminUser | AuthUser>(admin)
+  const [isEditProfileOpen, setIsEditProfileOpen] = useState(false)
   const { closeToast, pushToast, toasts } = useToasts()
 
   const handleError = useCallback((error: unknown) => {
@@ -46,19 +49,41 @@ function Dashboard({ admin, onLogout }: DashboardProps) {
 
   useEffect(() => {
     void loadDashboard()
+    getMyProfile()
+      .then((profile) => {
+        if (profile) setCurrentAdminUser(profile)
+      })
+      .catch(() => {
+        // Ignorar si falla la primera carga de perfil propio
+      })
   }, [loadDashboard])
 
   return (
     <DashboardLayout
-      adminName={admin.first_name}
-      adminRole={admin.role}
+      adminName={currentAdminUser.first_name ?? admin.first_name}
+      adminRole={currentAdminUser.role ?? admin.role}
+      adminUser={currentAdminUser}
       sidebarExpanded={sidebarExpanded}
       view={view}
+      onEditProfile={() => setIsEditProfileOpen(true)}
       onLogout={onLogout}
       onToggleSidebar={() => setSidebarExpanded((current) => !current)}
       onViewChange={setView}
     >
       <ToastContainer toasts={toasts} onClose={closeToast} />
+
+      <EditAdminProfileModal
+        isOpen={isEditProfileOpen}
+        admin={currentAdminUser}
+        onClose={() => setIsEditProfileOpen(false)}
+        onSuccess={(updated) => {
+          setCurrentAdminUser(updated)
+          void users.loadUsers()
+          void loadDashboard()
+        }}
+        onError={handleError}
+        onToast={pushToast}
+      />
 
       {view === 'dashboard' && (
         <DashboardHome

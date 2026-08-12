@@ -16,6 +16,7 @@ export type AdminUser = {
   country?: string | null
   province?: string | null
   municipality?: string | null
+  address?: string | null
   points: number
   total_points_earned?: number
   total_points_redeemed?: number
