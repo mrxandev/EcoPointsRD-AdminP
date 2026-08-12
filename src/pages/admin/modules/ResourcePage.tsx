@@ -42,6 +42,7 @@ type ResourcePageProps = {
 }
 
 type ResourceReferences = {
+  centers: AdminRecord[]
   missions: AdminRecord[]
   organizations: AdminRecord[]
   rewards: AdminRecord[]
@@ -65,7 +66,7 @@ function ResourcePage({ config, onToast, users }: ResourcePageProps) {
   const [records, setRecords] = useState<AdminRecord[]>([])
   const [filters, setFilters] = useState<Record<string, string>>({})
   const [referenceUsers, setReferenceUsers] = useState<AdminUser[]>(users)
-  const [references, setReferences] = useState<ResourceReferences>({ missions: [], organizations: [], rewards: [] })
+  const [references, setReferences] = useState<ResourceReferences>({ centers: [], missions: [], organizations: [], rewards: [] })
   const emptyForm = useMemo(() => buildInitialForm(fields), [fields])
   const [form, setForm] = useState<Record<string, unknown>>(emptyForm)
   const [selected, setSelected] = useState<AdminRecord | null>(null)
@@ -78,14 +79,15 @@ function ResourcePage({ config, onToast, users }: ResourcePageProps) {
   const hasList = config.columns.length > 0
   const isMissionModule = config.endpoint === '/api/admin/missions'
   const isPointsModule = config.endpoint === '/api/admin/points/transactions' || config.title === 'Puntos'
-  const isRecyclingModule = config.endpoint.includes('recycling') || config.title === 'Reciclaje'
+  const isRecyclingCentersModule = config.endpoint === '/api/admin/recycling/centers'
+  const isRecyclingLogModule = config.endpoint === '/api/admin/recycling/logs' || config.title === 'Reciclaje'
   const formTitle = selected && config.canUpdate ? `Editar ${config.title}` : config.createTitle ?? `Crear ${config.title}`
   const displayFilterFields = useMemo(() => buildDisplayFilterFields(filterFields), [filterFields])
   const lookupUsers = referenceUsers.length ? referenceUsers : users
   const resolvedFilters = useMemo(() => resolveUserFilters(filters, lookupUsers), [filters, lookupUsers])
 
   const displayRecords = useMemo(() => {
-    if (!isRecyclingModule) return records
+    if (!isRecyclingLogModule) return records
 
     const userQuery = String(filters.user_id ?? '').trim().toLowerCase()
     const matQuery = String(filters.material_type ?? '').trim().toUpperCase()
@@ -120,7 +122,7 @@ function ResourcePage({ config, onToast, users }: ResourcePageProps) {
 
       return true
     })
-  }, [isRecyclingModule, records, filters.user_id, filters.material_type, lookupUsers])
+  }, [isRecyclingLogModule, records, filters.user_id, filters.material_type, lookupUsers])
 
   const loadRecords = useCallback(async () => {
     if (!hasList) return
@@ -183,18 +185,19 @@ function ResourcePage({ config, onToast, users }: ResourcePageProps) {
     const timer = window.setTimeout(() => {
       void (async () => {
         try {
-          const [allUsers, organizations, missions, rewards] = await Promise.all([
+          const [allUsers, organizations, missions, rewards, centers] = await Promise.all([
             getAdminUsers({ role: '', status: 'ACTIVE', search: '' }),
             listAdminResource('/api/admin/organizations', ['organizations', 'data', 'results'], {}),
             listAdminResource('/api/admin/missions', ['missions', 'data', 'results'], {}),
             listAdminResource('/api/admin/rewards', ['rewards', 'data', 'results'], {}),
+            listAdminResource('/api/admin/recycling/centers', ['centers', 'data', 'results'], {}),
           ])
 
           setReferenceUsers(allUsers)
-          setReferences({ organizations, missions, rewards })
+          setReferences({ centers, organizations, missions, rewards })
         } catch {
           setReferenceUsers(users)
-          setReferences({ organizations: [], missions: [], rewards: [] })
+          setReferences({ centers: [], organizations: [], missions: [], rewards: [] })
         }
       })()
     }, 0)
@@ -244,7 +247,7 @@ function ResourcePage({ config, onToast, users }: ResourcePageProps) {
         }
       })
 
-      if (isRecyclingModule) {
+      if (isRecyclingLogModule) {
         const lbs = parseFloat(String(sanitizedPayload.weight_lbs ?? sanitizedPayload.weight_kg ?? '0')) || 0
         const pts = parseInt(String(sanitizedPayload.points_awarded ?? '0'), 10) || 0
 
@@ -254,7 +257,7 @@ function ResourcePage({ config, onToast, users }: ResourcePageProps) {
       }
 
       if (selected?.id && config.canUpdate) {
-        await updateAdminResource(config.endpoint, selected.id, sanitizedPayload)
+        await updateAdminResource(resolveMutationEndpoint(config), selected.id, sanitizedPayload)
         onToast('Registro actualizado correctamente.', 'success')
       } else {
         await createAdminResource(resolveCreateEndpoint(config, sanitizedPayload), sanitizedPayload)
@@ -294,12 +297,20 @@ function ResourcePage({ config, onToast, users }: ResourcePageProps) {
     setSaving(true)
     try {
       const payload = actionNotes.trim() ? { notes: actionNotes.trim() } : {}
-      await runAdminAction(config.endpoint, pendingAction.record.id, pendingAction.action, payload)
+      await runAdminAction(resolveMutationEndpoint(config), pendingAction.record.id, pendingAction.action, payload)
       onToast('Accion ejecutada correctamente.', 'success')
       setPendingAction(null)
       setActionNotes('')
       setModal(null)
-      await loadRecords()
+      if (isRecyclingCentersModule && (pendingAction.action === 'activate' || pendingAction.action === 'deactivate')) {
+        setRecords((current) => current.map((record) => (
+          record.id === pendingAction.record.id
+            ? { ...record, status: pendingAction.action === 'activate' ? 'ACTIVE' : 'INACTIVE' }
+            : record
+        )))
+      } else {
+        await loadRecords()
+      }
     } catch (error) {
       onToast(getApiErrorMessage(error), 'error')
     } finally {
@@ -323,7 +334,7 @@ function ResourcePage({ config, onToast, users }: ResourcePageProps) {
 
         {filterFields.length > 0 && (
           <Panel title="Busqueda rapida" action={<button className="icon-tab" onClick={loadRecords} title={`Actualizar ${config.title}`} aria-label={`Actualizar ${config.title}`}><FiRefreshCw /></button>}>
-            {isRecyclingModule ? (
+            {isRecyclingLogModule ? (
               <div className="grid gap-4 md:grid-cols-2">
                 {/* Buscador de Usuario estandarizado estilo Audit */}
                 <div>
@@ -386,7 +397,7 @@ function ResourcePage({ config, onToast, users }: ResourcePageProps) {
               actions={config.actions ?? []}
               columns={config.columns}
               references={references}
-              records={isRecyclingModule ? displayRecords : records}
+              records={isRecyclingLogModule ? displayRecords : records}
               saving={saving}
               selectable={Boolean(config.canUpdate)}
               users={lookupUsers}
@@ -408,7 +419,7 @@ function ResourcePage({ config, onToast, users }: ResourcePageProps) {
               users={lookupUsers}
               onChange={(key, value) => setForm((current) => ({ ...current, [key]: value }))}
             />
-          ) : isRecyclingModule ? (
+          ) : isRecyclingLogModule ? (
             <RecyclingLogForm
               fields={fields}
               form={form}
@@ -442,7 +453,7 @@ function ResourcePage({ config, onToast, users }: ResourcePageProps) {
             </div>
           )}
 
-          {isMissionModule && (
+          {(isMissionModule || isRecyclingCentersModule) && (
             <div className="rounded-xl border border-outline-variant bg-surface-container-low p-4 space-y-3">
               <div className="flex items-center gap-2 text-sm font-semibold text-on-surface border-b border-outline-variant pb-2">
                 <FiMapPin className="text-success" />
@@ -1058,7 +1069,11 @@ function castFieldValue(field: ModuleField, value: string) {
 
 function resolveCreateEndpoint(config: ModuleConfig, form: Record<string, unknown>) {
   if (config.endpoint === '/api/admin/notifications/global' && form.user_id) return '/api/admin/notifications/user'
-  return config.createEndpoint ?? config.endpoint
+  return config.createEndpoint ?? config.mutationEndpoint ?? config.endpoint
+}
+
+function resolveMutationEndpoint(config: ModuleConfig) {
+  return config.mutationEndpoint ?? config.endpoint
 }
 
 function renderValue(column: string, value: unknown, references: ResourceReferences, users: AdminUser[], record?: AdminRecord) {
@@ -1216,8 +1231,12 @@ function getReferenceOptions(fieldKey: string, references: ResourceReferences, u
       }))
   }
 
-  if (fieldKey === 'organization_id' || fieldKey === 'sponsor_id' || fieldKey === 'center_id') {
+  if (fieldKey === 'organization_id' || fieldKey === 'sponsor_id') {
     return recordsToReferenceOptions(references.organizations, ['name', 'email', 'organization_type'])
+  }
+
+  if (fieldKey === 'center_id') {
+    return recordsToReferenceOptions(references.centers, ['name', 'province', 'municipality'])
   }
 
   if (fieldKey === 'reward_id') {
@@ -1309,8 +1328,12 @@ function resolveReferenceLabel(column: string, value: unknown, references: Resou
     return user ? `${getUserName(user)} (${user.cedula})` : shortId(id)
   }
 
-  if (column === 'organization_id' || column === 'sponsor_id' || column === 'center_id') {
+  if (column === 'organization_id' || column === 'sponsor_id') {
     return findRecordLabel(id, references.organizations, ['name', 'email']) || shortId(id)
+  }
+
+  if (column === 'center_id') {
+    return findRecordLabel(id, references.centers, ['name', 'province', 'municipality']) || shortId(id)
   }
 
   if (column === 'mission_id') {
@@ -1370,6 +1393,15 @@ function groupFieldsIntoBentoCards(fields: ModuleField[], endpoint?: string): Be
     return [
       { title: 'Datos de la Organización', icon: <FiFileText className="text-primary" />, fields: fields.filter((f) => orgKeys.includes(f.key)) },
       { title: 'Contacto y Ubicación', icon: <FiMapPin className="text-success" />, fields: fields.filter((f) => !orgKeys.includes(f.key)) },
+    ].filter((g) => g.fields.length > 0)
+  }
+
+  if (endpoint?.includes('/recycling/centers')) {
+    const mainKeys = ['name', 'description']
+    const locationKeys = ['province', 'municipality', 'address', 'latitude', 'longitude', 'phone']
+    return [
+      { title: 'Datos del Centro', icon: <FiFileText className="text-primary" />, fields: fields.filter((f) => mainKeys.includes(f.key)) },
+      { title: 'Ubicacion y Contacto', icon: <FiMapPin className="text-success" />, fields: fields.filter((f) => locationKeys.includes(f.key)) },
     ].filter((g) => g.fields.length > 0)
   }
 
