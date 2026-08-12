@@ -5,6 +5,7 @@ export type AdminView =
   | 'podium'
   | 'users'
   | 'organizations'
+  | 'recyclingCenters'
   | 'missions'
   | 'points'
   | 'rewards'

@@ -46,6 +46,7 @@ export type ModuleConfig = {
   fields?: ModuleField[]
   filters?: ModuleField[]
   listKeys: string[]
+  mutationEndpoint?: string
   title: string
   actions?: ModuleAction[]
 }
@@ -79,6 +80,33 @@ export const moduleConfigs: Partial<Record<AdminView, ModuleConfig>> = {
       { key: 'municipality', label: 'Municipio' },
       { key: 'address', label: 'Direccion' },
       { key: 'logo_url', label: 'Logo URL' },
+    ],
+    actions: [
+      { action: 'activate', label: 'Activar', tone: 'success' },
+      { action: 'deactivate', label: 'Desactivar', tone: 'warning' },
+    ],
+  },
+  recyclingCenters: {
+    title: 'Centros de reciclaje',
+    description: 'Administra centros disponibles, ubicacion, contacto y estado operativo.',
+    endpoint: '/api/admin/recycling/centers',
+    listKeys: ['centers', 'data', 'results'],
+    columns: ['name', 'province', 'municipality', 'address', 'phone', 'status', 'created_at'],
+    canCreate: true,
+    canUpdate: true,
+    filters: [
+      { key: 'province', label: 'Provincia' },
+      { key: 'municipality', label: 'Municipio' },
+    ],
+    fields: [
+      { key: 'name', label: 'Nombre', required: true },
+      { key: 'description', label: 'Descripcion', type: 'textarea' },
+      { key: 'province', label: 'Provincia' },
+      { key: 'municipality', label: 'Municipio' },
+      { key: 'address', label: 'Direccion' },
+      { key: 'latitude', label: 'Latitud', type: 'number' },
+      { key: 'longitude', label: 'Longitud', type: 'number' },
+      { key: 'phone', label: 'Telefono' },
     ],
     actions: [
       { action: 'activate', label: 'Activar', tone: 'success' },
@@ -223,6 +251,7 @@ export const moduleConfigs: Partial<Record<AdminView, ModuleConfig>> = {
     ],
     fields: [
       { key: 'user_id', label: 'Usuario', required: true },
+      { key: 'center_id', label: 'Centro', type: 'select' },
       {
         key: 'material_type',
         label: 'Tipo de Material',
