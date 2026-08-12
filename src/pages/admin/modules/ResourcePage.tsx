@@ -791,6 +791,7 @@ function RecordDetail({ record, references, users }: { record: AdminRecord | nul
   const dateEntries = entries.filter(([k]) => dateKeys.includes(k))
   const configEntries = entries.filter(([k]) => configKeys.includes(k))
   const otherEntries = entries.filter(([k]) => !['id', 'title', 'name', 'status', ...mainKeys, ...locationKeys, ...dateKeys, ...configKeys].includes(k))
+  const hasMapCoordinates = hasValidCoordinates(record.latitude, record.longitude)
 
   return (
     <div className="space-y-4">
@@ -850,6 +851,15 @@ function RecordDetail({ record, references, users }: { record: AdminRecord | nul
                 <DetailRow key={key} label={formatColumn(key)} value={formatDetailValue(key, value, references, users)} />
               ))}
             </div>
+            {hasMapCoordinates && (
+              <MapPicker
+                latitude={String(record.latitude)}
+                longitude={String(record.longitude)}
+                readOnly
+                title="Ubicación en el mapa"
+                description="Punto registrado para esta misión."
+              />
+            )}
           </div>
         )}
 
@@ -893,6 +903,20 @@ function DetailRow({ label, value }: { label: string; value: React.ReactNode }) 
       <span className="text-on-surface-variant font-medium">{label}</span>
       <span className="font-semibold text-on-surface break-words">{value}</span>
     </div>
+  )
+}
+
+function hasValidCoordinates(latitude: unknown, longitude: unknown) {
+  const parsedLatitude = Number(latitude)
+  const parsedLongitude = Number(longitude)
+
+  return (
+    Number.isFinite(parsedLatitude) &&
+    Number.isFinite(parsedLongitude) &&
+    parsedLatitude >= -90 &&
+    parsedLatitude <= 90 &&
+    parsedLongitude >= -180 &&
+    parsedLongitude <= 180
   )
 }
 
