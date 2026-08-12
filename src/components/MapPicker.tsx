@@ -5,12 +5,22 @@ import 'leaflet/dist/leaflet.css'
 type MapPickerProps = {
   latitude: string
   longitude: string
-  onChange: (latitude: number, longitude: number) => void
+  onChange?: (latitude: number, longitude: number) => void
+  readOnly?: boolean
+  title?: string
+  description?: string
 }
 
 const defaultCenter: [number, number] = [18.4861, -69.9312]
 
-function MapPicker({ latitude, longitude, onChange }: MapPickerProps) {
+function MapPicker({
+  latitude,
+  longitude,
+  onChange,
+  readOnly = false,
+  title = 'Selecciona la ubicacion en el mapa',
+  description = 'Haz click sobre el punto exacto donde se realizara la mision. Las coordenadas se completan automaticamente.',
+}: MapPickerProps) {
   const containerRef = useRef<HTMLDivElement | null>(null)
   const mapRef = useRef<L.Map | null>(null)
   const markerRef = useRef<L.Marker | null>(null)
@@ -30,20 +40,23 @@ function MapPicker({ latitude, longitude, onChange }: MapPickerProps) {
       maxZoom: 19,
     }).addTo(map)
 
-    map.on('click', (event) => {
-      const nextLatitude = Number(event.latlng.lat.toFixed(7))
-      const nextLongitude = Number(event.latlng.lng.toFixed(7))
-      onChange(nextLatitude, nextLongitude)
-    })
+    if (!readOnly && onChange) {
+      map.on('click', (event) => {
+        const nextLatitude = Number(event.latlng.lat.toFixed(7))
+        const nextLongitude = Number(event.latlng.lng.toFixed(7))
+        onChange(nextLatitude, nextLongitude)
+      })
+    }
 
     mapRef.current = map
+    window.setTimeout(() => map.invalidateSize(), 0)
 
     return () => {
       map.remove()
       mapRef.current = null
       markerRef.current = null
     }
-  }, [latitude, longitude, onChange])
+  }, [latitude, longitude, onChange, readOnly])
 
   useEffect(() => {
     const map = mapRef.current
@@ -62,8 +75,8 @@ function MapPicker({ latitude, longitude, onChange }: MapPickerProps) {
   return (
     <div className="location-picker">
       <div>
-        <strong>Selecciona la ubicacion en el mapa</strong>
-        <p>Haz click sobre el punto exacto donde se realizara la mision. Las coordenadas se completan automaticamente.</p>
+        <strong>{title}</strong>
+        <p>{description}</p>
       </div>
       <div ref={containerRef} className="location-map" />
     </div>
