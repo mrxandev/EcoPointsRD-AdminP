@@ -112,11 +112,14 @@ function UserDistributionCard({
               <circle cx="50" cy="50" r="38" fill="none" stroke="#f1f5f9" strokeWidth="16" />
 
               {(() => {
-                let cumulativePct = 0
+                const cumulativeOffsets = items.reduce<number[]>((acc, _, i) => {
+                  acc.push(i === 0 ? 0 : acc[i - 1] + items[i - 1].pct)
+                  return acc
+                }, [])
+
                 return items.map((item, idx) => {
                   const strokeDasharray = `${item.pct * 2.388} ${238.8 - item.pct * 2.388}`
-                  const strokeDashoffset = -cumulativePct * 2.388
-                  cumulativePct += item.pct
+                  const strokeDashoffset = -cumulativeOffsets[idx] * 2.388
                   const isHovered = hoveredIdx === idx
                   const isOtherHovered = hoveredIdx !== null && !isHovered
 

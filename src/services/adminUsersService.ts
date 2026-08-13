@@ -6,21 +6,20 @@ import type { AdminUser, UserFormState } from '../types'
 
 export async function getAdminUsers(filters: UserFilters) {
   const search = filters.search.trim()
-  const shouldFilterFullNameLocally = search.includes(' ')
   const params = Object.fromEntries(
     Object.entries({
       limit: '1000',
       pageSize: '1000',
       per_page: '1000',
-      ...filters,
-      search: shouldFilterFullNameLocally ? '' : search,
+      role: filters.role,
+      status: filters.status,
     }).filter(([, value]) => value),
   )
 
   const { data } = await api.get<ListResponse<AdminUser>>('/api/admin/users', { params })
   const users = readList(data, ['users', 'data', 'results'])
 
-  return shouldFilterFullNameLocally ? filterUsersBySearch(users, search) : users
+  return search ? filterUsersBySearch(users, search) : users
 }
 
 export async function getAdminUserDetail(id: string) {
@@ -56,6 +55,7 @@ function normalizeUserPayload<T extends Partial<UserFormState> | Partial<AdminUs
 
 function filterUsersBySearch(users: AdminUser[], search: string) {
   const normalizedSearch = normalizeSearch(search)
+  const searchDigits = onlyDigits(search)
 
   return users.filter((user) => {
     const searchable = [
@@ -64,12 +64,16 @@ function filterUsersBySearch(users: AdminUser[], search: string) {
       `${user.first_name} ${user.last_name}`,
       user.email,
       user.cedula,
+      onlyDigits(user.cedula),
       user.phone,
+      user.role,
+      user.status,
+      user.id,
     ]
       .filter(Boolean)
       .map((value) => normalizeSearch(String(value)))
 
-    return searchable.some((value) => value.includes(normalizedSearch))
+    return searchable.some((value) => value.includes(normalizedSearch) || (searchDigits !== '' && value.includes(searchDigits)))
   })
 }
 

@@ -45,9 +45,26 @@ function AuditPage({ audits, filters, loading, users, onFiltersChange, onLoadAud
           </button>
         }
       >
-        {/* Filtros superiores con diseño estandarizado tipo Podio */}
+        {/* Filtros superiores con diseño estandarizado */}
         <div className="mb-6 space-y-4">
-          {/* Fila 1: Buscadores estandarizados tipo Podio (Usuario Afectado y Actor) */}
+          {/* Fila 1: Búsqueda general unificada */}
+          <div>
+            <label className="text-xs font-bold text-on-surface-variant block mb-1.5">
+              Búsqueda General (Acción, usuario, actor, motivo o entidad)
+            </label>
+            <div className="relative">
+              <FiSearch className="absolute left-3 top-1/2 -translate-y-1/2 text-on-surface-variant" size={16} />
+              <input
+                type="text"
+                placeholder="Buscar por cualquier término (ej: Juan, USER_ROLE_UPDATED, misiones...)..."
+                value={filters.search || ''}
+                onChange={(e) => onFiltersChange({ ...filters, search: e.target.value })}
+                className="w-full rounded-lg border border-outline-variant bg-surface px-3 py-2.5 pl-9 text-sm text-on-surface placeholder:text-on-surface-variant/70 focus:border-primary focus:outline-hidden transition-colors"
+              />
+            </div>
+          </div>
+
+          {/* Fila 2: Buscadores específicos por Usuario Afectado y Actor */}
           <div className="grid gap-4 md:grid-cols-2">
             {/* Buscador Usuario Afectado */}
             <div>

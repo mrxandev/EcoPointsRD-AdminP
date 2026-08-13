@@ -50,6 +50,7 @@ export function EditAdminProfileModal({
 
     // 1. Cargar inmediatamente datos locales si existen
     if (admin) {
+      // eslint-disable-next-line react-hooks/set-state-in-effect
       setFirstName(admin.first_name ?? '')
       setLastName(admin.last_name ?? '')
       setPhone(admin.phone ?? '')
