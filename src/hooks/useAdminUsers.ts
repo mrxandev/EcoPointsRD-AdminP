@@ -160,8 +160,9 @@ export function useAdminUsers({
       onToast('Usuario creado correctamente.', 'success')
       await loadUsers()
       await onAfterMutation()
-    } catch (error: any) {
-      const msg = String(error?.response?.data?.message || error?.message || '')
+    } catch (error: unknown) {
+      const err = error as { response?: { data?: { message?: string } }; message?: string }
+      const msg = String(err?.response?.data?.message || err?.message || '')
       if (msg.toLowerCase().includes('email') || msg.toLowerCase().includes('correo')) {
         setCreateErrors((prev) => ({ ...prev, email: 'El correo electrónico ya está registrado.' }))
       } else if (msg.toLowerCase().includes('cedula')) {

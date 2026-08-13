@@ -95,8 +95,8 @@ export const moduleConfigs: Partial<Record<AdminView, ModuleConfig>> = {
     canCreate: true,
     canUpdate: true,
     filters: [
-      { key: 'province', label: 'Provincia' },
-      { key: 'municipality', label: 'Municipio' },
+      { key: 'search', label: 'Búsqueda' },
+      { key: 'status', label: 'Estado', type: 'select', options: ['', 'ACTIVE', 'INACTIVE'] },
     ],
     fields: [
       { key: 'name', label: 'Nombre', required: true },
@@ -122,7 +122,7 @@ export const moduleConfigs: Partial<Record<AdminView, ModuleConfig>> = {
     canCreate: true,
     canUpdate: true,
     filters: [
-      { key: 'search', label: 'Nombre' },
+      { key: 'search', label: 'Búsqueda' },
       { key: 'status', label: 'Estado', type: 'select', options: ['', 'DRAFT', 'PUBLISHED', 'IN_PROGRESS', 'COMPLETED', 'CANCELLED'] },
       { key: 'type', label: 'Tipo', type: 'select', options: missionTypeOptions },
       { key: 'organization_id', label: 'Organizacion', type: 'select', options: [{ label: 'Todas', value: '' }] },
@@ -182,7 +182,7 @@ export const moduleConfigs: Partial<Record<AdminView, ModuleConfig>> = {
     listKeys: ['transactions', 'data', 'results'],
     columns: ['user_id', 'points', 'transaction_type', 'description', 'created_at'],
     filters: [
-      { key: 'user_id', label: 'Usuario' },
+      { key: 'search', label: 'Búsqueda' },
       { key: 'type', label: 'Tipo', type: 'select', options: ['', 'BONUS', 'PENALTY', 'EARNED', 'REDEEMED'] },
       { key: 'from', label: 'Desde', type: 'date' },
       { key: 'to', label: 'Hasta', type: 'date' },
@@ -206,7 +206,7 @@ export const moduleConfigs: Partial<Record<AdminView, ModuleConfig>> = {
     canCreate: true,
     canUpdate: true,
     filters: [
-      { key: 'search', label: 'Nombre' },
+      { key: 'search', label: 'Búsqueda' },
       { key: 'status', label: 'Estado', type: 'select', options: ['', 'ACTIVE', 'INACTIVE'] },
     ],
     fields: [
@@ -229,7 +229,7 @@ export const moduleConfigs: Partial<Record<AdminView, ModuleConfig>> = {
     listKeys: ['redemptions', 'data', 'results'],
     columns: ['reward_id', 'user_id', 'points_spent', 'status', 'created_at'],
     filters: [
-      { key: 'user_id', label: 'Usuario' },
+      { key: 'search', label: 'Búsqueda' },
       { key: 'status', label: 'Estado', type: 'select', options: ['', 'PENDING', 'APPROVED', 'DELIVERED', 'CANCELLED'] },
     ],
     actions: [
@@ -246,8 +246,21 @@ export const moduleConfigs: Partial<Record<AdminView, ModuleConfig>> = {
     columns: ['user_id', 'material_type', 'weight_kg', 'points_awarded', 'created_at'],
     canCreate: true,
     filters: [
-      { key: 'user_id', label: 'Usuario' },
-      { key: 'material_type', label: 'Material' },
+      { key: 'search', label: 'Búsqueda' },
+      {
+        key: 'material_type',
+        label: 'Material',
+        type: 'select',
+        options: [
+          { label: 'Todos', value: '' },
+          { label: 'Latas de Aluminio', value: 'ALUMINUM' },
+          { label: 'Vidrio', value: 'GLASS' },
+          { label: 'Botellas PET', value: 'PET' },
+          { label: 'Papel y Cartón', value: 'PAPER' },
+          { label: 'Electrónicos', value: 'E_WASTE' },
+          { label: 'Otros Materiales', value: 'OTHER' },
+        ],
+      },
     ],
     fields: [
       { key: 'user_id', label: 'Usuario', required: true },

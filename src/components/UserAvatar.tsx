@@ -10,6 +10,7 @@ export type UserAvatarProps = {
   fallbackClassName?: string
 }
 
+// eslint-disable-next-line react-refresh/only-export-components
 export function getInitials(user?: { first_name?: string | null; last_name?: string | null } | null) {
   if (!user) return 'U'
   const first = user.first_name?.trim()?.[0] ?? ''
