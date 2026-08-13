@@ -82,47 +82,157 @@ function ResourcePage({ config, onToast, users }: ResourcePageProps) {
   const isRecyclingCentersModule = config.endpoint === '/api/admin/recycling/centers'
   const isRecyclingLogModule = config.endpoint === '/api/admin/recycling/logs' || config.title === 'Reciclaje'
   const formTitle = selected && config.canUpdate ? `Editar ${config.title}` : config.createTitle ?? `Crear ${config.title}`
-  const displayFilterFields = useMemo(() => buildDisplayFilterFields(filterFields), [filterFields])
+  const displayFilterFields = useMemo(() => buildDisplayFilterFields(filterFields, config.endpoint), [filterFields, config.endpoint])
   const lookupUsers = referenceUsers.length ? referenceUsers : users
   const resolvedFilters = useMemo(() => resolveUserFilters(filters, lookupUsers), [filters, lookupUsers])
 
   const displayRecords = useMemo(() => {
-    if (!isRecyclingLogModule) return records
+    if (records.length === 0) return []
 
-    const userQuery = String(filters.user_id ?? '').trim().toLowerCase()
+    const searchQuery = normalizeText(filters.search ?? filters.user_id ?? filters.province ?? filters.municipality ?? '')
+    const searchDigits = onlyDigits(filters.search ?? filters.user_id ?? '')
+    const statusQuery = String(filters.status ?? '').trim().toUpperCase()
+    const typeQuery = String(filters.type ?? filters.mission_type ?? filters.organization_type ?? filters.transaction_type ?? '').trim().toUpperCase()
     const matQuery = String(filters.material_type ?? '').trim().toUpperCase()
+    const orgQuery = String(filters.organization_id ?? '').trim()
+    const fromDate = filters.from ? new Date(filters.from).getTime() : null
+    const toDate = filters.to ? new Date(filters.to).getTime() : null
+
     const standardMaterials = ['ALUMINUM', 'GLASS', 'PET', 'PAPER', 'E_WASTE']
 
     return records.filter((r) => {
+      if (statusQuery) {
+        const itemStatus = String(r.status ?? '').toUpperCase()
+        if (itemStatus !== statusQuery) return false
+      }
+
+      if (typeQuery) {
+        const itemType = String(r.organization_type ?? r.mission_type ?? r.type ?? r.transaction_type ?? '').toUpperCase()
+        if (itemType !== typeQuery) return false
+      }
+
+      if (orgQuery) {
+        if (String(r.organization_id ?? '') !== orgQuery) return false
+      }
+
       if (matQuery) {
-        const itemMat = String(r.material_type ?? '').trim().toUpperCase()
+        const itemMat = String(r.material_type ?? '').toUpperCase()
         if (matQuery === 'OTHER') {
-          if (standardMaterials.includes(itemMat)) {
-            return false
-          }
+          if (standardMaterials.includes(itemMat)) return false
         } else if (itemMat !== matQuery) {
           return false
         }
       }
 
-      if (userQuery) {
-        const u = lookupUsers.find((user) => String(user.id) === String(r.user_id))
-        const matchUserId = String(r.user_id ?? '').toLowerCase().includes(userQuery)
+      if (fromDate || toDate) {
+        const itemDateStr = String(r.created_at ?? r.start_date ?? '')
+        if (itemDateStr) {
+          const itemTime = new Date(itemDateStr).getTime()
+          if (!isNaN(itemTime)) {
+            if (fromDate && itemTime < fromDate) return false
+            if (toDate && itemTime > toDate + 86400000) return false
+          }
+        }
+      }
 
-        if (!u) {
-          return matchUserId
+      if (searchQuery) {
+        const directValues: string[] = [
+          String(r.name ?? ''),
+          String(r.title ?? ''),
+          String(r.description ?? ''),
+          String(r.province ?? ''),
+          String(r.municipality ?? ''),
+          String(r.address ?? ''),
+          String(r.email ?? ''),
+          String(r.phone ?? ''),
+          String(r.material_type ?? ''),
+          String(r.organization_type ?? ''),
+          String(r.mission_type ?? ''),
+          String(r.transaction_type ?? ''),
+          String(r.status ?? ''),
+          String(r.points ?? r.points_reward ?? r.points_required ?? r.points_spent ?? r.points_awarded ?? ''),
+          String(r.weight_lbs ?? r.weight_kg ?? ''),
+          String(r.id ?? ''),
+        ]
+
+        if (r.user_id) {
+          const u = lookupUsers.find((user) => String(user.id) === String(r.user_id))
+          if (u) {
+            directValues.push(
+              getUserName(u),
+              String(u.first_name ?? ''),
+              String(u.last_name ?? ''),
+              String(u.email ?? ''),
+              String(u.cedula ?? ''),
+              onlyDigits(u.cedula),
+              String(u.phone ?? ''),
+              String(u.id ?? ''),
+            )
+          } else {
+            directValues.push(String(r.user_id))
+          }
         }
 
-        const matchName = getUserName(u).toLowerCase().includes(userQuery)
-        const matchEmail = String(u.email ?? '').toLowerCase().includes(userQuery)
-        const matchCedula = String(u.cedula ?? '').toLowerCase().includes(userQuery)
+        if (r.organization_id || r.sponsor_id) {
+          const orgId = String(r.organization_id ?? r.sponsor_id)
+          const org = references.organizations.find((o) => String(o.id) === orgId)
+          if (org) {
+            directValues.push(String(org.name ?? ''), String(org.email ?? ''), String(org.organization_type ?? ''))
+          }
+        }
 
-        return matchUserId || matchName || matchEmail || matchCedula
+        if (r.center_id) {
+          const center = references.centers.find((c) => String(c.id) === String(r.center_id))
+          if (center) {
+            directValues.push(String(center.name ?? ''), String(center.province ?? ''), String(center.municipality ?? ''))
+          }
+        }
+
+        if (r.reward_id) {
+          const reward = references.rewards.find((rw) => String(rw.id) === String(r.reward_id))
+          if (reward) {
+            directValues.push(String(reward.title ?? reward.name ?? ''), String(reward.description ?? ''))
+          }
+        }
+
+        if (r.mission_id) {
+          const mission = references.missions.find((m) => String(m.id) === String(r.mission_id))
+          if (mission) {
+            directValues.push(String(mission.title ?? mission.name ?? ''), String(mission.description ?? ''))
+          }
+        }
+
+        const hasMatch = directValues.some((val) => {
+          if (!val) return false
+          const normVal = normalizeText(val)
+          if (normVal.includes(searchQuery)) return true
+          if (searchDigits && onlyDigits(val).includes(searchDigits)) return true
+          return false
+        })
+
+        if (!hasMatch) return false
       }
 
       return true
     })
-  }, [isRecyclingLogModule, records, filters.user_id, filters.material_type, lookupUsers])
+  }, [
+    records,
+    filters.search,
+    filters.user_id,
+    filters.province,
+    filters.municipality,
+    filters.status,
+    filters.type,
+    filters.mission_type,
+    filters.organization_type,
+    filters.transaction_type,
+    filters.material_type,
+    filters.organization_id,
+    filters.from,
+    filters.to,
+    lookupUsers,
+    references,
+  ])
 
   const loadRecords = useCallback(async () => {
     if (!hasList) return
@@ -397,7 +507,7 @@ function ResourcePage({ config, onToast, users }: ResourcePageProps) {
               actions={config.actions ?? []}
               columns={config.columns}
               references={references}
-              records={isRecyclingLogModule ? displayRecords : records}
+              records={displayRecords}
               saving={saving}
               selectable={Boolean(config.canUpdate)}
               users={lookupUsers}
@@ -1206,14 +1316,42 @@ function getRecyclingMaterialFilterOptions() {
   ]
 }
 
-function buildDisplayFilterFields(fields: ModuleField[]) {
+function buildDisplayFilterFields(fields: ModuleField[], endpoint?: string) {
   return fields.map((field) => {
-    if (field.key === 'user_id') {
-      return { ...field, label: 'Usuario', type: 'text' as const }
-    }
+    if (field.key === 'search' || field.key === 'user_id') {
+      let placeholder = 'Buscar por nombre, correo, cédula...'
+      let label = 'Búsqueda rápida'
 
-    if (field.key === 'search') {
-      return { ...field, label: 'Nombre' }
+      if (endpoint?.includes('/recycling/centers')) {
+        placeholder = 'Buscar por provincia, municipio, nombre, dirección...'
+        label = 'Buscar centro'
+      } else if (endpoint?.includes('organizations')) {
+        placeholder = 'Buscar por nombre, tipo, correo, provincia, municipio...'
+        label = 'Buscar organización'
+      } else if (endpoint?.includes('missions')) {
+        placeholder = 'Buscar por título, provincia, municipio, tipo...'
+        label = 'Buscar misión'
+      } else if (endpoint?.includes('points')) {
+        placeholder = 'Buscar por usuario, cédula, correo o descripción...'
+        label = 'Buscar transacción'
+      } else if (endpoint?.includes('rewards')) {
+        placeholder = 'Buscar por título, descripción, patrocinador...'
+        label = 'Buscar recompensa'
+      } else if (endpoint?.includes('redemptions')) {
+        placeholder = 'Buscar por usuario, cédula, correo o recompensa...'
+        label = 'Buscar canje'
+      } else if (endpoint?.includes('recycling/logs') || endpoint?.includes('recycling')) {
+        placeholder = 'Buscar por usuario, cédula, correo o material...'
+        label = 'Buscar registro'
+      }
+
+      return {
+        ...field,
+        key: 'search',
+        label,
+        type: 'text' as const,
+        placeholder,
+      }
     }
 
     return field

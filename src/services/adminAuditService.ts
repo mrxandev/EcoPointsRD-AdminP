@@ -16,7 +16,7 @@ export async function getAdminAuditLogs(filters: AuditFilters, users: AdminUser[
     }).filter(([, value]) => value),
   )
 
-  let logs: AuditLog[] = []
+  let logs: AuditLog[]
   try {
     const { data } = await api.get<ListResponse<AuditLog>>('/api/admin/logs', { params })
     logs = readList(data, ['auditLogs', 'logs', 'data', 'results'])

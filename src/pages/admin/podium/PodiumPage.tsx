@@ -47,11 +47,18 @@ export default function PodiumPage({ users = [], topUsers = [] }: PodiumPageProp
 
   // Aplicar filtros de búsqueda (solo usuarios activos)
   const filteredUsers = sortedUsers.filter((user) => {
+    if (!searchTerm.trim()) return true
+    const normSearch = searchTerm.normalize('NFD').replace(/[\u0300-\u036f]/g, '').toLowerCase().trim()
+    const searchDigits = searchTerm.replace(/[^0-9]/g, '')
+    const normName = `${user.first_name} ${user.last_name}`.normalize('NFD').replace(/[\u0300-\u036f]/g, '').toLowerCase()
+    const normEmail = (user.email ?? '').normalize('NFD').replace(/[\u0300-\u036f]/g, '').toLowerCase()
+    const normCedula = (user.cedula ?? '').replace(/[^0-9]/g, '')
+
     return (
-      searchTerm === '' ||
-      `${user.first_name} ${user.last_name}`.toLowerCase().includes(searchTerm.toLowerCase()) ||
+      normName.includes(normSearch) ||
+      normEmail.includes(normSearch) ||
       user.cedula.includes(searchTerm) ||
-      user.email.toLowerCase().includes(searchTerm.toLowerCase())
+      (searchDigits !== '' && normCedula.includes(searchDigits))
     )
   })
 

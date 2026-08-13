@@ -9,7 +9,9 @@ export function useAdminAudits(users: AdminUser[], onError: (error: unknown) => 
   const [loadingAudits, setLoadingAudits] = useState(false)
 
   const usersRef = useRef(users)
-  usersRef.current = users
+  useEffect(() => {
+    usersRef.current = users
+  }, [users])
 
   const loadAudits = useCallback(async () => {
     setLoadingAudits(true)
