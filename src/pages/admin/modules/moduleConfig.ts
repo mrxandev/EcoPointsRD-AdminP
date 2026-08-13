@@ -11,7 +11,6 @@ const missionTypeOptions: SelectOption[] = [
 
 const organizationTypeOptions: SelectOption[] = [
   { label: 'Supermercado', value: 'Supermercado' },
-  { label: 'Super', value: 'Super' },
   { label: 'ONG', value: 'ONG' },
   { label: 'Institución Gubernamental', value: 'Institución Gubernamental' },
   { label: 'Empresa Privada', value: 'Empresa Privada' },

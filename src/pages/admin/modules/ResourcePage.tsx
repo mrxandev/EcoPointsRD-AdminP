@@ -19,7 +19,7 @@ import {
   FiUploadCloud,
   FiXCircle,
 } from 'react-icons/fi'
-import { Badge, Input, Loader, MapPicker, Modal, MunicipalityInput, Panel, PhoneInput, ProvinceInput, Select, TableActionButton, TablePagination } from '../../../components'
+import { Badge, Input, Loader, MapPicker, Modal, MunicipalityInput, Panel, PhoneInput, ProvinceInput, Select, SearchableSelect, TableActionButton, TablePagination } from '../../../components'
 import { getApiErrorMessage } from '../../../api'
 import { onlyDigits } from '../../../formatters'
 import {
@@ -783,12 +783,13 @@ function ReferenceFieldControl({ field, onChange, options, value }: { field: Mod
   ]
 
   return (
-    <Select
+    <SearchableSelect
       label={formatReferenceFieldLabel(field)}
       required={field.required}
       options={selectOptions}
       value={value}
       onChange={onChange}
+      placeholder={getReferencePlaceholder(field.key)}
     />
   )
 }
@@ -825,7 +826,9 @@ function FilterFieldControl({
 
   if (field.type === 'select' || field.type === 'choice' || options.length > 0) {
     const normalizedOptions = options.map((opt) =>
-      typeof opt === 'string' ? { label: opt || 'Todos', value: opt } : { label: opt.label, value: opt.value }
+      typeof opt === 'string'
+        ? { label: opt ? translateText(opt) : 'Todos', value: opt }
+        : { label: translateText(opt.label), value: opt.value }
     )
 
     return (
