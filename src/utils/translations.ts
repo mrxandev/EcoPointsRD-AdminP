@@ -56,6 +56,14 @@ const translationMap: Record<string, string> = {
   REWARDS: 'Recompensas',
   REDEMPTIONS: 'Canjes',
   RECYCLING_LOGS: 'Reciclaje',
+
+  // Materiales
+  ALUMINUM: 'Latas de Aluminio',
+  GLASS: 'Vidrio',
+  PET: 'Botellas PET',
+  PAPER: 'Papel y Cartón',
+  E_WASTE: 'Electrónicos',
+  OTHER: 'Otros Materiales',
 }
 
 export function translateText(value: string | undefined | null): string {
